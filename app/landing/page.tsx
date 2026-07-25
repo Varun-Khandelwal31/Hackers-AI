@@ -46,9 +46,6 @@ export default function LandingPage() {
   const [authEmail, setAuthEmail] = useState('varun@hackops.ai');
   const [authRole, setAuthRole] = useState<UserRole>('judge');
 
-  // FAQ Accordion State
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
-
   // Active Feature Preview Tab State
   const [activeTab, setActiveTab] = useState<'radar' | 'matching' | 'triage' | 'directory'>('radar');
 
@@ -74,25 +71,6 @@ export default function LandingPage() {
     );
     router.push('/dashboard');
   };
-
-  const faqs = [
-    {
-      q: 'How does HackOps AI evaluate repositories using Google Gemini AI?',
-      a: 'HackOps AI extracts repository README files, source code trees, package manifests, and project descriptions, then submits them to Google Gemini 1.5 Flash. It evaluates projects across Innovation, Technical Complexity, Completeness, and UX/Presentation on a standardized 1-10 scale.',
-    },
-    {
-      q: 'Can I use my own Google Gemini API Key?',
-      a: 'Yes! HackOps AI includes a dedicated API Key Configurator under Settings (or via environment variable). You can enter your own Gemini API key to run unlimited live evaluations.',
-    },
-    {
-      q: 'How does the Vector Skill Complementarity engine match participants?',
-      a: 'Our algorithm converts candidate tech stacks into one-hot skill vectors and calculates vector distance to form teams with zero skill overlap and maximum complementary coverage (e.g. pairing an ML Engineer with a Frontend Designer).',
-    },
-    {
-      q: 'Is HackOps AI compatible with Devfolio, ETHGlobal, or custom hackathons?',
-      a: 'Absolutely! HackOps AI acts as an autonomous AI operations overlay that integrates alongside any registration platform to handle live team matching, mentor triage, and judge code evaluation.',
-    },
-  ];
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden font-sans selection:bg-brand-500 selection:text-white">
@@ -132,7 +110,6 @@ export default function LandingPage() {
             <a href="#preview" className="hover:text-white transition-colors">Live Preview</a>
             <a href="#comparison" className="hover:text-white transition-colors">Why HackOps</a>
             <a href="#workflow" className="hover:text-white transition-colors">How It Works</a>
-            <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
           </nav>
 
           {/* Action Buttons */}
@@ -632,45 +609,7 @@ package.json`}
         </div>
       </section>
 
-      {/* SECTION 6: FREQUENTLY ASKED QUESTIONS (FAQ) ACCORDION */}
-      <section id="faq" className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="space-y-8 text-center">
-          
-          <div className="space-y-3">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white">Frequently Asked Questions</h2>
-            <p className="text-xs sm:text-sm text-slate-400">Everything you need to know about HackOps AI.</p>
-          </div>
-
-          <div className="space-y-4 text-left">
-            {faqs.map((faq, idx) => {
-              const isOpen = openFaq === idx;
-              return (
-                <div
-                  key={idx}
-                  className="rounded-2xl bg-slate-900/60 border border-slate-800 overflow-hidden transition-all"
-                >
-                  <button
-                    onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full p-5 flex items-center justify-between text-left text-sm font-bold text-white hover:text-brand-300 transition-colors"
-                  >
-                    <span>{faq.q}</span>
-                    {isOpen ? <ChevronUp className="w-4 h-4 text-brand-400" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
-                  </button>
-
-                  {isOpen && (
-                    <div className="px-5 pb-5 text-xs text-slate-300 leading-relaxed border-t border-slate-800/80 pt-3">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-        </div>
-      </section>
-
-      {/* SECTION 7: FINAL CTA BANNER */}
+      {/* SECTION 6: FINAL CTA BANNER */}
       <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="p-10 sm:p-16 rounded-3xl bg-gradient-to-r from-brand-900/80 via-slate-900 to-slate-950 border border-brand-500/30 text-center space-y-6 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
