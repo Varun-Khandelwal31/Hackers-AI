@@ -34,6 +34,7 @@ interface AppContextType {
   userSettings: UserSettings;
   activeRole: UserRole;
   geminiApiKey: string;
+  groqApiKey: string;
   isAuthenticated: boolean;
   evaluationWeights: EvaluationWeights;
   stats: {
@@ -51,6 +52,7 @@ interface AppContextType {
   updateUserSettings: (settings: Partial<UserSettings>) => void;
   setActiveRole: (role: UserRole) => void;
   setGeminiApiKey: (key: string) => void;
+  setGroqApiKey: (key: string) => void;
   setEvaluationWeights: (weights: EvaluationWeights) => void;
   login: (name: string, email: string, role?: UserRole) => void;
   logout: () => void;
@@ -120,6 +122,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [userSettings, setUserSettings] = useState<UserSettings>(defaultSettings);
   const [activeRole, setActiveRole] = useState<UserRole>('judge');
   const [geminiApiKey, setGeminiApiKeyState] = useState<string>('');
+  const [groqApiKey, setGroqApiKeyState] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [evaluationWeights, setEvaluationWeightsState] = useState<EvaluationWeights>({
     innovation: 25,
@@ -152,6 +155,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const savedApiKey = localStorage.getItem('hackops_gemini_api_key');
       if (savedApiKey) setGeminiApiKeyState(savedApiKey);
+
+      const savedGroqKey = localStorage.getItem('hackops_groq_api_key');
+      if (savedGroqKey) setGroqApiKeyState(savedGroqKey);
 
       const savedAuth = localStorage.getItem('hackops_is_auth');
       if (savedAuth !== null) setIsAuthenticated(savedAuth === 'true');
@@ -302,6 +308,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setGeminiApiKeyState(key);
   };
 
+  const setGroqApiKey = (key: string) => {
+    setGroqApiKeyState(key);
+  };
+
   const setEvaluationWeights = (weights: EvaluationWeights) => {
     setEvaluationWeightsState(weights);
   };
@@ -331,6 +341,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         userSettings,
         activeRole,
         geminiApiKey,
+        groqApiKey,
         isAuthenticated,
         evaluationWeights,
         stats,
@@ -343,6 +354,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateUserSettings,
         setActiveRole,
         setGeminiApiKey,
+        setGroqApiKey,
         setEvaluationWeights,
         login,
         logout,

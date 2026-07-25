@@ -21,7 +21,7 @@ import {
 
 export default function SettingsPage() {
   const { showToast } = useToast();
-  const { userSettings, updateUserSettings, activeRole, setActiveRole, geminiApiKey, setGeminiApiKey } = useApp();
+  const { userSettings, updateUserSettings, activeRole, setActiveRole, geminiApiKey, setGeminiApiKey, groqApiKey, setGroqApiKey } = useApp();
   const [activeTab, setActiveTab] = useState<string>('profile');
   const [settings, setSettings] = useState<UserSettings>(userSettings);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -438,6 +438,54 @@ export default function SettingsPage() {
                   </div>
                   <span className="text-[10px] text-slate-500 block">
                     Key is securely stored in your local session context (`localStorage`). If left blank, local neural scoring fallback is used.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 5: Groq High-Speed LLM API Configuration */}
+            <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2">
+                  <Key className="w-4 h-4 text-cyan-400" />
+                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                    Groq Ultra-Fast LLM API Key
+                  </h2>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono">
+                  Llama 3.3 70B Engine
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Enter your official <span className="text-white font-semibold">Groq API Key</span> to enable sub-second high-speed Llama 3.3 70B code evaluation and mentor triage.
+                </p>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                    Groq API Key
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="password"
+                      placeholder="gsk_..."
+                      value={groqApiKey}
+                      onChange={(e) => setGroqApiKey(e.target.value)}
+                      className="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 text-xs text-white border border-slate-800 focus:outline-none focus:border-cyan-500/50 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        showToast('Groq Key Saved!', 'Groq Llama 3.3 70B ultra-fast LLM API active', 'success');
+                      }}
+                      className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md transition-all"
+                    >
+                      Save Key
+                    </button>
+                  </div>
+                  <span className="text-[10px] text-slate-500 block">
+                    Key is securely stored in your local session context (`localStorage`).
                   </span>
                 </div>
               </div>
