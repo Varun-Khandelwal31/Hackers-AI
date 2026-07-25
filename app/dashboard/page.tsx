@@ -25,7 +25,13 @@ import {
 export default function MainDashboardPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const { projects, stats: liveStats, userSettings, activeRole, addProject } = useApp();
+  const { projects, stats: liveStats, userSettings, activeRole, addProject, isAuthenticated } = useApp();
+
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchFilter, setSearchFilter] = useState<string>('');

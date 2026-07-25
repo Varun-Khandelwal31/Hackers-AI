@@ -38,35 +38,41 @@ import {
 export default function LandingPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const { login } = useApp();
+  const { userSettings, isAuthenticated, login } = useApp();
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
-  const [authName, setAuthName] = useState('Varun Khandelwal');
-  const [authEmail, setAuthEmail] = useState('varun@hackops.ai');
+  const [authName, setAuthName] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
   const [authRole, setAuthRole] = useState<UserRole>('judge');
 
   // Active Feature Preview Tab State
   const [activeTab, setActiveTab] = useState<'radar' | 'matching' | 'triage' | 'directory'>('radar');
 
   const handleLaunchApp = () => {
-    login(authName, authEmail, authRole);
-    showToast('Authenticated! 🚀', `Welcome to HackOps AI Dashboard as ${authRole.toUpperCase()}`, 'success');
-    router.push('/dashboard');
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    } else {
+      setIsAuthModalOpen(true);
+    }
   };
 
   const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!authEmail.trim()) {
-      showToast('Validation Error', 'Email is required', 'error');
+      showToast('Validation Error', 'Email address is required', 'error');
+      return;
+    }
+    if (!authName.trim()) {
+      showToast('Validation Error', 'Full name is required', 'error');
       return;
     }
 
-    login(authName.trim() || 'Hackathon Member', authEmail.trim(), authRole);
+    login(authName.trim(), authEmail.trim(), authRole);
     setIsAuthModalOpen(false);
     showToast(
       authMode === 'signin' ? 'Signed In Successfully! 🎉' : 'Account Created! 🎉',
-      `Redirecting to your HackOps AI Dashboard as ${authRole.toUpperCase()}`,
+      `Welcome ${authName.trim()}! Redirecting to your HackOps AI Dashboard as ${authRole.toUpperCase()}`,
       'success'
     );
     router.push('/dashboard');
@@ -704,31 +710,29 @@ package.json`}
 
             <form onSubmit={handleAuthSubmit} className="space-y-4">
               
-              {authMode === 'signup' && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Full Name</label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      required
-                      placeholder="Varun Khandelwal"
-                      value={authName}
-                      onChange={(e) => setAuthName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 text-xs text-white border border-slate-800 focus:outline-none focus:border-brand-500/50"
-                    />
-                  </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Full Name *</label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Alex Morgan"
+                    value={authName}
+                    onChange={(e) => setAuthName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 text-xs text-white border border-slate-800 focus:outline-none focus:border-brand-500/50"
+                  />
                 </div>
-              )}
+              </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Email Address</label>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Email Address *</label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     required
-                    placeholder="varun@hackops.ai"
+                    placeholder="e.g. alex@example.com"
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 text-xs text-white border border-slate-800 focus:outline-none focus:border-brand-500/50"

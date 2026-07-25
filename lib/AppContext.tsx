@@ -123,7 +123,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeRole, setActiveRole] = useState<UserRole>('judge');
   const [geminiApiKey, setGeminiApiKeyState] = useState<string>('');
   const [groqApiKey, setGroqApiKeyState] = useState<string>('');
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [evaluationWeights, setEvaluationWeightsState] = useState<EvaluationWeights>({
     innovation: 25,
     technical: 25,
@@ -319,16 +319,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const login = (name: string, email: string, role: UserRole = 'judge') => {
     setIsAuthenticated(true);
     setActiveRole(role);
-    setUserSettings((prev) => ({
-      ...prev,
-      fullName: name || prev.fullName,
-      email: email || prev.email,
-      role: role || prev.role,
-    }));
+    const newSettings: UserSettings = {
+      ...userSettings,
+      fullName: name || 'Hackathon Member',
+      email: email || 'member@hackops.ai',
+      role: role || 'judge',
+    };
+    setUserSettings(newSettings);
+    try {
+      localStorage.setItem('hackops_is_auth', 'true');
+      localStorage.setItem('hackops_active_role', role);
+      localStorage.setItem('hackops_user_settings', JSON.stringify(newSettings));
+    } catch (e) {}
   };
 
   const logout = () => {
     setIsAuthenticated(false);
+    try {
+      localStorage.removeItem('hackops_is_auth');
+      localStorage.removeItem('hackops_user_settings');
+      localStorage.removeItem('hackops_active_role');
+    } catch (e) {}
   };
 
   return (

@@ -150,11 +150,17 @@ export default function Navbar() {
 
           {/* Profile User Avatar */}
           <Link href="/settings" className="flex items-center space-x-2 p-1 rounded-xl hover:bg-slate-900 transition-colors">
-            <img
-              src={userSettings.avatarUrl}
-              alt={userSettings.fullName}
-              className="w-8 h-8 rounded-lg object-cover ring-2 ring-brand-500/40"
-            />
+            {userSettings.avatarUrl ? (
+              <img
+                src={userSettings.avatarUrl}
+                alt={userSettings.fullName}
+                className="w-8 h-8 rounded-lg object-cover ring-2 ring-brand-500/40"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-brand-600/20 border border-brand-500/40 flex items-center justify-center text-brand-300 font-extrabold text-xs uppercase">
+                {userSettings.fullName?.charAt(0) || 'U'}
+              </div>
+            )}
             <span className="hidden lg:inline text-xs font-bold text-white truncate max-w-[120px]">
               {userSettings.fullName}
             </span>
