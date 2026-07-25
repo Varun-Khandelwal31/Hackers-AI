@@ -49,12 +49,15 @@ export default function LandingPage() {
   // Active Feature Preview Tab State
   const [activeTab, setActiveTab] = useState<'radar' | 'matching' | 'triage' | 'directory'>('radar');
 
+  const openAuthModal = (mode: 'signin' | 'signup' = 'signin') => {
+    setAuthMode(mode);
+    setAuthName('');
+    setAuthEmail('');
+    setIsAuthModalOpen(true);
+  };
+
   const handleLaunchApp = () => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
-    } else {
-      setIsAuthModalOpen(true);
-    }
+    openAuthModal('signin');
   };
 
   const handleAuthSubmit = (e: React.FormEvent) => {
@@ -121,20 +124,14 @@ export default function LandingPage() {
           {/* Action Buttons */}
           <div className="flex items-center space-x-3">
             <button
-              onClick={() => {
-                setAuthMode('signin');
-                setIsAuthModalOpen(true);
-              }}
+              onClick={() => openAuthModal('signin')}
               className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-200 transition-all"
             >
               Sign In
             </button>
 
             <button
-              onClick={() => {
-                setAuthMode('signup');
-                setIsAuthModalOpen(true);
-              }}
+              onClick={() => openAuthModal('signup')}
               className="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-bold text-white shadow-lg shadow-brand-600/30 transition-all flex items-center space-x-1.5"
             >
               <span>Get Started</span>
@@ -179,10 +176,7 @@ export default function LandingPage() {
           </button>
 
           <button
-            onClick={() => {
-              setAuthMode('signup');
-              setIsAuthModalOpen(true);
-            }}
+            onClick={() => openAuthModal('signup')}
             className="w-full sm:w-auto px-8 py-4.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 text-sm font-bold flex items-center justify-center space-x-2 transition-all"
           >
             <User className="w-4.5 h-4.5 text-cyan-400" />
@@ -638,10 +632,7 @@ package.json`}
             </button>
 
             <button
-              onClick={() => {
-                setAuthMode('signup');
-                setIsAuthModalOpen(true);
-              }}
+              onClick={() => openAuthModal('signup')}
               className="px-7 py-4 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold transition-all"
             >
               Create Free Account
