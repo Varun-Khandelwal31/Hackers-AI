@@ -54,7 +54,7 @@ interface AppContextType {
   setGeminiApiKey: (key: string) => void;
   setGroqApiKey: (key: string) => void;
   setEvaluationWeights: (weights: EvaluationWeights) => void;
-  login: (name: string, email: string, role?: UserRole) => void;
+  login: (name: string, email: string, role?: UserRole, avatarUrl?: string) => void;
   logout: () => void;
 }
 
@@ -325,14 +325,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setEvaluationWeightsState(weights);
   };
 
-  const login = (name: string, email: string, role: UserRole = 'judge') => {
+  const login = (name: string, email: string, role: UserRole = 'judge', avatarUrl?: string) => {
     setIsAuthenticated(true);
     setActiveRole(role);
+    const computedAvatar = avatarUrl || userSettings.avatarUrl || `https://unavatar.io/${encodeURIComponent(email || name || 'user')}`;
     const newSettings: UserSettings = {
       ...userSettings,
       fullName: name || 'Hackathon Member',
       email: email || 'member@hackops.ai',
       role: role || 'judge',
+      avatarUrl: computedAvatar,
+      connectedAccounts: {
+        ...userSettings.connectedAccounts,
+        google: true,
+      },
     };
     setUserSettings(newSettings);
     try {

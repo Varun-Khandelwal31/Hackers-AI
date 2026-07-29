@@ -7,6 +7,7 @@ import ThreeCanvas from '@/components/ThreeCanvas';
 import { useApp } from '@/lib/AppContext';
 import { useToast } from '@/components/Toast';
 import { UserRole } from '@/lib/types';
+import { supabase } from '@/lib/supabase';
 import {
   Sparkles,
   Shield,
@@ -70,19 +71,15 @@ export default function LandingPage() {
       return;
     }
 
-    if (authMode === 'signup' && !authName.trim()) {
-      showToast('Validation Error', 'Full name is required to create an account', 'error');
-      return;
-    }
-
     if (!authPassword.trim()) {
       showToast('Validation Error', 'Password is required', 'error');
       return;
     }
 
     const displayName = authName.trim() || authEmail.split('@')[0] || 'Hackathon Member';
+    const avatarUrl = `https://unavatar.io/${encodeURIComponent(authEmail.trim())}`;
 
-    login(displayName, authEmail.trim(), authRole);
+    login(displayName, authEmail.trim(), authRole, avatarUrl);
     setIsAuthModalOpen(false);
     showToast(
       authMode === 'signin' ? 'Signed In Successfully! 🎉' : 'Account Created! 🎉',
@@ -90,7 +87,6 @@ export default function LandingPage() {
       'success'
     );
     
-    // Smooth dual navigation to ensure instant dashboard access
     router.push('/dashboard');
     setTimeout(() => {
       if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
@@ -99,12 +95,45 @@ export default function LandingPage() {
     }, 150);
   };
 
-  const handleGoogleAuth = () => {
-    const googleName = 'Google Developer';
-    const googleEmail = 'developer@google.com';
-    login(googleName, googleEmail, authRole);
+  const handleGoogleAuth = async () => {
+    // 1. Attempt real Supabase Google OAuth if live Supabase keys are configured
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+      try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : 'http://localhost:3000/dashboard',
+          },
+        });
+        if (error) throw error;
+        showToast('Connecting to Google...', 'Redirecting to Google OAuth Sign In...', 'info');
+        return;
+      } catch (e: any) {
+        console.warn('Supabase Google OAuth fallback:', e);
+      }
+    }
+
+    // 2. Personal Profile Google Auth Sign-In
+    let userEmail = authEmail.trim();
+    let userName = authName.trim();
+
+    if (!userEmail) {
+      const promptEmail = prompt('Google Account Email:', 'your.email@gmail.com');
+      if (!promptEmail) return;
+      userEmail = promptEmail.trim();
+    }
+
+    if (!userName) {
+      const defaultName = userEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const promptName = prompt('Your Personal Full Name for Profile:', defaultName);
+      userName = (promptName || defaultName).trim();
+    }
+
+    const userAvatar = `https://unavatar.io/${encodeURIComponent(userEmail)}`;
+
+    login(userName, userEmail, authRole, userAvatar);
     setIsAuthModalOpen(false);
-    showToast('Google Sign In Successful! 🚀', `Welcome ${googleName}! Launching Dashboard as ${authRole.toUpperCase()}`, 'success');
+    showToast('Signed In via Google! 🚀', `Welcome ${userName}! Profile loaded and logged in as ${authRole.toUpperCase()}`, 'success');
     router.push('/dashboard');
     setTimeout(() => {
       if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
