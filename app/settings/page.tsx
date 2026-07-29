@@ -13,13 +13,8 @@ import {
   Lock,
   Github,
   Globe,
-  Linkedin,
-  MessageSquare,
   Save,
   Upload,
-  Database,
-  Server,
-  CheckCircle2,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -29,16 +24,12 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings>(userSettings);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  const [supabaseUrl, setSupabaseUrl] = useState<string>('');
-  const [supabaseKey, setSupabaseKey] = useState<string>('');
-
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'account', label: 'Account & Socials', icon: Lock },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'roles', label: 'Role & Permissions', icon: Shield },
     { id: 'api', label: 'API Keys & LLMs', icon: Key },
-    { id: 'database', label: 'Supabase DB', icon: Database },
   ];
 
   const roleOptions: { role: UserRole; label: string }[] = [
@@ -93,7 +84,7 @@ export default function SettingsPage() {
           <div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight">System Settings</h1>
             <p className="text-xs text-slate-400 mt-1">
-              Manage your persona role, LLM API keys, Supabase PostgreSQL database, and notifications.
+              Manage your persona role, LLM API keys, profile info, and notifications.
             </p>
           </div>
           <button
@@ -366,73 +357,6 @@ export default function SettingsPage() {
                     </button>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* TAB 6: SUPABASE DATABASE CONFIGURATION */}
-            {activeTab === 'database' && (
-              <div className="space-y-6">
-                
-                <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <div className="flex items-center space-x-2">
-                      <Database className="w-5 h-5 text-emerald-400" />
-                      <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                        Supabase PostgreSQL Database
-                      </h2>
-                    </div>
-                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold flex items-center space-x-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                      <span>Primary Database</span>
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    HackOps AI uses <span className="text-white font-semibold">Supabase PostgreSQL</span> as its exclusive primary relational database for managing projects, multi-rubric radar evaluations, and mentor triage logs.
-                  </p>
-                </div>
-
-                <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-4">
-                  <div className="flex items-center space-x-2 border-b border-slate-800 pb-3">
-                    <Server className="w-4 h-4 text-emerald-400" />
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                      Supabase Credentials & Endpoint
-                    </h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-400 uppercase block mb-1">Supabase URL</label>
-                      <input
-                        type="text"
-                        placeholder="https://your-project.supabase.co"
-                        value={supabaseUrl}
-                        onChange={(e) => setSupabaseUrl(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 text-xs text-white border border-slate-800 font-mono focus:outline-none focus:border-emerald-500/50"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-400 uppercase block mb-1">Supabase Anon Public Key</label>
-                      <input
-                        type="password"
-                        placeholder="eyJhbGciOiJIUzI1Ni..."
-                        value={supabaseKey}
-                        onChange={(e) => setSupabaseKey(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 text-xs text-white border border-slate-800 font-mono focus:outline-none focus:border-emerald-500/50"
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => showToast('Supabase Saved!', 'Supabase PostgreSQL database configured as single primary DB', 'success')}
-                      className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md transition-all flex items-center space-x-2"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Save Supabase DB Config</span>
-                    </button>
-                  </div>
-                </div>
-
               </div>
             )}
 
