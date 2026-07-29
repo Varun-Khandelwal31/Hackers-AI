@@ -255,7 +255,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateProjectEvaluation = (projectId: string, evaluation: Evaluation) => {
     setProjects((prev) =>
-      prev.map((p) => (p.id === projectId ? { ...p, evaluation } : p))
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        const currentHistory = p.evaluation_history || [];
+        const newHistory = p.evaluation ? [p.evaluation, ...currentHistory] : currentHistory;
+        return {
+          ...p,
+          evaluation,
+          evaluation_history: newHistory,
+        };
+      })
     );
   };
 

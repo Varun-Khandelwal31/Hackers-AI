@@ -1,7 +1,7 @@
 # 🚀 HackOps AI — The AI Operations Layer for Hackathons
 
 [![Next.js 14](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![Google Gemini API](https://img.shields.io/badge/Google_Gemini-1.5_Flash-4285F4?style=flat-square&logo=google)](https://ai.google.dev/)
+[![Google Gemini API](https://img.shields.io/badge/Google_Gemini-2.5_Flash-4285F4?style=flat-square&logo=google)](https://ai.google.dev/)
 [![Three.js](https://img.shields.io/badge/Three.js-3D_WebGL-black?style=flat-square&logo=three.js)](https://threejs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38BDF8?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
@@ -20,7 +20,7 @@ HackOps AI is a production-grade AI-operations layer designed for hackathon orga
 
 ### 2. ⚡ Live AI Evaluation Hub (`/evaluation`)
 - **Clean Interactive Workbench**: Paste or enter any project title, GitHub repository URL, description/README, and file tree.
-- **Google Gemini 1.5 Flash Integration**: Real-time multi-rubric evaluation across **Innovation, Technical Complexity, Completeness, and UX/Presentation**.
+- **Google Gemini 2.5 Flash & Groq Llama 3.3 70B Integration**: Real-time multi-rubric evaluation across **Innovation, Technical Complexity, Completeness, and UX/Presentation**.
 - **Interactive Recharts Radar Chart**: Visual breakdown comparing team performance against top 10 hackathon averages.
 - **Exportable Markdown Reports**: One-click export of structured evaluation summaries for hackathon organizers.
 
@@ -49,7 +49,7 @@ HackOps AI is a production-grade AI-operations layer designed for hackathon orga
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) & Vanilla CSS Glassmorphism
 - **3D Engine**: [Three.js](https://threejs.org/)
-- **AI SDK**: Official `@google/generative-ai` (`gemini-1.5-flash`)
+- **AI SDK**: Official `@google/generative-ai` (`gemini-2.5-flash`)
 - **Data Visualization**: [Recharts](https://recharts.org/)
 - **Icons**: [Lucide React](https://lucide.dev/)
 - **State & Persistence**: React Context API (`AppContext`) + `localStorage`

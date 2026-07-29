@@ -61,6 +61,7 @@ export interface Project {
   category: string;
   team_size: number;
   evaluation?: Evaluation;
+  evaluation_history?: Evaluation[];
   badge?: string; // e.g. 'Finalist'
   cover_image?: string;
 }

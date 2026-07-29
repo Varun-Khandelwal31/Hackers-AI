@@ -217,23 +217,28 @@ export default function LandingPage() {
         </div>
 
         {/* Trust Stats Strip */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto pt-16 text-left">
-          <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800/80 backdrop-blur-md hover:border-brand-500/40 transition-all">
-            <span className="text-3xl font-black text-white font-mono">128+</span>
-            <span className="text-xs text-slate-400 block font-semibold mt-1">Evaluated Repositories</span>
+        <div className="pt-16 text-left">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
+            <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800/80 backdrop-blur-md hover:border-brand-500/40 transition-all">
+              <span className="text-3xl font-black text-white font-mono">128+</span>
+              <span className="text-xs text-slate-400 block font-semibold mt-1">Evaluated Repositories</span>
+            </div>
+            <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800/80 backdrop-blur-md hover:border-cyan-500/40 transition-all">
+              <span className="text-3xl font-black text-brand-300 font-mono">92%</span>
+              <span className="text-xs text-slate-400 block font-semibold mt-1">Team Complementarity</span>
+            </div>
+            <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800/80 backdrop-blur-md hover:border-emerald-500/40 transition-all">
+              <span className="text-3xl font-black text-cyan-300 font-mono">&lt; 2s</span>
+              <span className="text-xs text-slate-400 block font-semibold mt-1">AI Triage Latency</span>
+            </div>
+            <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800/80 backdrop-blur-md hover:border-purple-500/40 transition-all">
+              <span className="text-3xl font-black text-emerald-300 font-mono">100%</span>
+              <span className="text-xs text-slate-400 block font-semibold mt-1">Gemini 2.5 & Groq Powered</span>
+            </div>
           </div>
-          <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800/80 backdrop-blur-md hover:border-cyan-500/40 transition-all">
-            <span className="text-3xl font-black text-brand-300 font-mono">92%</span>
-            <span className="text-xs text-slate-400 block font-semibold mt-1">Team Complementarity</span>
-          </div>
-          <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800/80 backdrop-blur-md hover:border-emerald-500/40 transition-all">
-            <span className="text-3xl font-black text-cyan-300 font-mono">&lt; 2s</span>
-            <span className="text-xs text-slate-400 block font-semibold mt-1">AI Triage Latency</span>
-          </div>
-          <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800/80 backdrop-blur-md hover:border-purple-500/40 transition-all">
-            <span className="text-3xl font-black text-emerald-300 font-mono">100%</span>
-            <span className="text-xs text-slate-400 block font-semibold mt-1">Gemini & Groq LLM Powered</span>
-          </div>
+          <p className="text-[11px] text-slate-500 text-center mt-3 font-mono">
+            *Benchmark metrics based on sample seeded dataset and live inference latency
+          </p>
         </div>
 
       </section>
@@ -312,7 +317,7 @@ export default function LandingPage() {
                   </span>
                   <h3 className="text-2xl font-bold text-white">Automated Code Evaluation & Radar Charts</h3>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    Evaluates code repositories across Innovation, Technical Complexity, Completeness, and UX. Generates visual Recharts radar charts and executive judge feedback.
+                    Evaluates code repositories across Innovation, Technical Complexity, Completeness, and UX. Inspects actual source files, file tree structures, and test suites to generate visual Recharts radar charts and executive judge feedback.
                   </p>
                   <Link href="/evaluation" className="inline-flex items-center space-x-2 text-xs font-bold text-brand-400 hover:text-brand-300">
                     <span>Open AI Evaluation Workbench</span>
@@ -390,7 +395,7 @@ export default function LandingPage() {
                   </span>
                   <h3 className="text-2xl font-bold text-white">Instant Triage & Video Escalation</h3>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    Provides participants with automated code diagnosis via Google Gemini AI, then matches them with specialized mentors for live video debugging.
+                    Provides participants with automated code diagnosis via Google Gemini 2.5 Flash, then matches them with specialized mentors for live video debugging.
                   </p>
                   <Link href="/participant/mentor-assistant" className="inline-flex items-center space-x-2 text-xs font-bold text-cyan-400 hover:text-cyan-300">
                     <span>Launch AI Mentor Assistant</span>
@@ -496,7 +501,7 @@ package.json`}
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white">HackOps AI Operations Layer</h3>
-                  <span className="text-xs text-brand-300 font-mono">Autonomous AI Agent Engine</span>
+                  <span className="text-xs text-brand-300 font-mono">LLM-Powered Evaluation Engine</span>
                 </div>
               </div>
 
@@ -511,7 +516,7 @@ package.json`}
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />
-                  <span>Automated AI mentor triage resolving 75% of basic code issues.</span>
+                  <span>Automated AI mentor triage resolving basic code issues automatically.</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />

@@ -321,7 +321,7 @@ export default function SettingsPage() {
                       <Key className="w-4 h-4 text-brand-400" />
                       <h2 className="text-sm font-bold text-white uppercase tracking-wider">Google Gemini API Key</h2>
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 font-mono">Gemini 1.5 Flash</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 font-mono">Gemini 2.5 Flash</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
