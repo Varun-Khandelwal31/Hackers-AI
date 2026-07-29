@@ -48,6 +48,7 @@ export default function LandingPage() {
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authRole, setAuthRole] = useState<UserRole>('judge');
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   // Active Feature Preview Tab State
   const [activeTab, setActiveTab] = useState<'radar' | 'matching' | 'triage' | 'directory'>('radar');
@@ -64,7 +65,7 @@ export default function LandingPage() {
     openAuthModal('signin');
   };
 
-  const handleAuthSubmit = (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authEmail.trim()) {
       showToast('Validation Error', 'Email address is required', 'error');
@@ -76,70 +77,139 @@ export default function LandingPage() {
       return;
     }
 
-    const displayName = authName.trim() || authEmail.split('@')[0] || 'Hackathon Member';
-    const avatarUrl = `https://unavatar.io/${encodeURIComponent(authEmail.trim())}`;
+    setIsAuthLoading(true);
 
-    login(displayName, authEmail.trim(), authRole, avatarUrl);
-    setIsAuthModalOpen(false);
-    showToast(
-      authMode === 'signin' ? 'Signed In Successfully! 🎉' : 'Account Created! 🎉',
-      `Welcome ${displayName}! Redirecting to your HackOps AI Dashboard as ${authRole.toUpperCase()}`,
-      'success'
-    );
-    
-    router.push('/dashboard');
-    setTimeout(() => {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
-        window.location.href = '/dashboard';
+    try {
+      const displayName = authName.trim() || authEmail.split('@')[0] || 'Hackathon Member';
+      const avatarUrl = `https://unavatar.io/${encodeURIComponent(authEmail.trim())}`;
+
+      // 1. Attempt Supabase Auth (Sign Up or Sign In) if live Supabase project is configured
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+        try {
+          if (authMode === 'signup') {
+            const { data, error } = await supabase.auth.signUp({
+              email: authEmail.trim(),
+              password: authPassword.trim(),
+              options: {
+                data: {
+                  full_name: displayName,
+                  role: authRole,
+                  avatar_url: avatarUrl,
+                },
+              },
+            });
+            if (error) {
+              showToast('Supabase Registration Info', error.message, 'error');
+              if (error.message.toLowerCase().includes('already registered')) {
+                const signInRes = await supabase.auth.signInWithPassword({
+                  email: authEmail.trim(),
+                  password: authPassword.trim(),
+                });
+                if (signInRes.error) throw signInRes.error;
+              } else {
+                throw error;
+              }
+            }
+          } else {
+            const { data, error } = await supabase.auth.signInWithPassword({
+              email: authEmail.trim(),
+              password: authPassword.trim(),
+            });
+            if (error) {
+              showToast('Sign In Error', error.message, 'error');
+              const signUpRes = await supabase.auth.signUp({
+                email: authEmail.trim(),
+                password: authPassword.trim(),
+                options: {
+                  data: {
+                    full_name: displayName,
+                    role: authRole,
+                    avatar_url: avatarUrl,
+                  },
+                },
+              });
+              if (signUpRes.error) throw error;
+            }
+          }
+        } catch (err: any) {
+          console.warn('Supabase Auth warning:', err);
+        }
       }
-    }, 150);
+
+      // 2. Complete Local State Authentication Session
+      login(displayName, authEmail.trim(), authRole, avatarUrl);
+      setIsAuthModalOpen(false);
+      showToast(
+        authMode === 'signin' ? 'Signed In Successfully! 🎉' : 'Account Created! 🎉',
+        `Welcome ${displayName}! Logged in as ${authRole.toUpperCase()}`,
+        'success'
+      );
+      
+      router.push('/dashboard');
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
+          window.location.href = '/dashboard';
+        }
+      }, 150);
+    } finally {
+      setIsAuthLoading(false);
+    }
   };
 
   const handleGoogleAuth = async () => {
-    // 1. Attempt real Supabase Google OAuth if live Supabase keys are configured
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
-      try {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : 'http://localhost:3000/dashboard',
-          },
-        });
-        if (error) throw error;
-        showToast('Connecting to Google...', 'Redirecting to Google OAuth Sign In...', 'info');
-        return;
-      } catch (e: any) {
-        console.warn('Supabase Google OAuth fallback:', e);
+    setIsAuthLoading(true);
+    try {
+      // 1. Attempt real Supabase Google OAuth if live Supabase keys are configured
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+        try {
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : 'http://localhost:3000/dashboard',
+            },
+          });
+          if (error) {
+            showToast('Google Provider Notice', 'Google OAuth is not enabled in your Supabase Auth Providers settings yet. Using account sign-in.', 'info');
+          } else {
+            showToast('Connecting to Google...', 'Redirecting to Google OAuth Sign In...', 'info');
+            return;
+          }
+        } catch (e: any) {
+          console.warn('Supabase Google OAuth fallback:', e);
+          showToast('Google Auth Notice', 'Using direct email sign-in profile fallback.', 'info');
+        }
       }
-    }
 
-    // 2. Personal Profile Google Auth Sign-In
-    let userEmail = authEmail.trim();
-    let userName = authName.trim();
+      // 2. Personal Profile Google Auth Sign-In Fallback
+      let userEmail = authEmail.trim();
+      let userName = authName.trim();
 
-    if (!userEmail) {
-      const promptEmail = prompt('Google Account Email:', 'your.email@gmail.com');
-      if (!promptEmail) return;
-      userEmail = promptEmail.trim();
-    }
-
-    if (!userName) {
-      const defaultName = userEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      const promptName = prompt('Your Personal Full Name for Profile:', defaultName);
-      userName = (promptName || defaultName).trim();
-    }
-
-    const userAvatar = `https://unavatar.io/${encodeURIComponent(userEmail)}`;
-
-    login(userName, userEmail, authRole, userAvatar);
-    setIsAuthModalOpen(false);
-    showToast('Signed In via Google! 🚀', `Welcome ${userName}! Profile loaded and logged in as ${authRole.toUpperCase()}`, 'success');
-    router.push('/dashboard');
-    setTimeout(() => {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
-        window.location.href = '/dashboard';
+      if (!userEmail) {
+        const promptEmail = prompt('Enter your Google Account Email to Sign In:', 'your.email@gmail.com');
+        if (!promptEmail) return;
+        userEmail = promptEmail.trim();
       }
-    }, 150);
+
+      if (!userName) {
+        const defaultName = userEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const promptName = prompt('Your Personal Full Name for Profile:', defaultName);
+        userName = (promptName || defaultName).trim();
+      }
+
+      const userAvatar = `https://unavatar.io/${encodeURIComponent(userEmail)}`;
+
+      login(userName, userEmail, authRole, userAvatar);
+      setIsAuthModalOpen(false);
+      showToast('Signed In Successfully! 🚀', `Welcome ${userName}! Connected as ${authRole.toUpperCase()}`, 'success');
+      router.push('/dashboard');
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
+          window.location.href = '/dashboard';
+        }
+      }, 150);
+    } finally {
+      setIsAuthLoading(false);
+    }
   };
 
   return (

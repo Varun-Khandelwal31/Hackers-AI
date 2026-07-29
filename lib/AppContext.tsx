@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Project, MatchedTeam, UserSettings, UserRole, Evaluation } from './types';
 import { MOCK_PROJECTS, MOCK_MATCHED_TEAMS } from './seed-data';
 
+import { supabase, dbService } from './supabase';
+
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'ai';
@@ -168,6 +170,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Error loading saved state:', e);
     } finally {
       setIsLoaded(true);
+    }
+  }, []);
+
+  // Sync with Supabase Auth Session (Google OAuth & Email/Password)
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setIsAuthenticated(true);
+          const email = session.user.email || 'member@hackops.ai';
+          const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || email.split('@')[0];
+          const avatar = session.user.user_metadata?.avatar_url || `https://unavatar.io/${encodeURIComponent(email)}`;
+          const role = (session.user.user_metadata?.role as UserRole) || 'judge';
+
+          setUserSettings((prev) => ({
+            ...prev,
+            fullName: name,
+            email: email,
+            avatarUrl: avatar,
+            role: role,
+            connectedAccounts: { ...prev.connectedAccounts, google: true },
+          }));
+        }
+      });
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          setIsAuthenticated(true);
+          const email = session.user.email || 'member@hackops.ai';
+          const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || email.split('@')[0];
+          const avatar = session.user.user_metadata?.avatar_url || `https://unavatar.io/${encodeURIComponent(email)}`;
+          const role = (session.user.user_metadata?.role as UserRole) || 'judge';
+
+          setUserSettings((prev) => ({
+            ...prev,
+            fullName: name,
+            email: email,
+            avatarUrl: avatar,
+            role: role,
+            connectedAccounts: { ...prev.connectedAccounts, google: true },
+          }));
+        }
+      });
+
+      return () => subscription.unsubscribe();
     }
   }, []);
 
@@ -348,12 +395,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) {}
   };
 
-  const logout = () => {
+  const logout = async () => {
     setIsAuthenticated(false);
     try {
       localStorage.removeItem('hackops_is_auth');
       localStorage.removeItem('hackops_user_settings');
       localStorage.removeItem('hackops_active_role');
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+        await supabase.auth.signOut();
+      }
     } catch (e) {}
   };
 
