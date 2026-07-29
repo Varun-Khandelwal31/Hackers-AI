@@ -82,57 +82,49 @@ export default function LandingPage() {
     try {
       const displayName = authName.trim() || authEmail.split('@')[0] || 'Hackathon Member';
       const avatarUrl = `https://unavatar.io/${encodeURIComponent(authEmail.trim())}`;
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
 
-      // 1. Attempt Supabase Auth (Sign Up or Sign In) if live Supabase project is configured
+      // 1. Supabase Email/Password Auth
       if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
-        try {
-          if (authMode === 'signup') {
-            const { data, error } = await supabase.auth.signUp({
-              email: authEmail.trim(),
-              password: authPassword.trim(),
-              options: {
-                data: {
-                  full_name: displayName,
-                  role: authRole,
-                  avatar_url: avatarUrl,
-                },
+        if (authMode === 'signup') {
+          const { data, error } = await supabase.auth.signUp({
+            email: authEmail.trim(),
+            password: authPassword.trim(),
+            options: {
+              data: {
+                full_name: displayName,
+                role: authRole,
+                avatar_url: avatarUrl,
               },
-            });
-            if (error) {
-              showToast('Supabase Registration Info', error.message, 'error');
-              if (error.message.toLowerCase().includes('already registered')) {
-                const signInRes = await supabase.auth.signInWithPassword({
-                  email: authEmail.trim(),
-                  password: authPassword.trim(),
-                });
-                if (signInRes.error) throw signInRes.error;
-              } else {
-                throw error;
-              }
-            }
-          } else {
-            const { data, error } = await supabase.auth.signInWithPassword({
-              email: authEmail.trim(),
-              password: authPassword.trim(),
-            });
-            if (error) {
-              showToast('Sign In Error', error.message, 'error');
-              const signUpRes = await supabase.auth.signUp({
-                email: authEmail.trim(),
-                password: authPassword.trim(),
-                options: {
-                  data: {
-                    full_name: displayName,
-                    role: authRole,
-                    avatar_url: avatarUrl,
-                  },
-                },
-              });
-              if (signUpRes.error) throw error;
-            }
+              emailRedirectTo: `${origin}/auth/callback`,
+            },
+          });
+
+          if (error) {
+            showToast('Sign-Up Error', error.message, 'error');
+            return;
           }
-        } catch (err: any) {
-          console.warn('Supabase Auth warning:', err);
+
+          // If email confirmation is enabled, data.session will be null
+          if (data.user && !data.session) {
+            showToast(
+              'Check Your Email ✉️',
+              `A confirmation link was sent to ${authEmail}. Please confirm your account to sign in.`,
+              'info'
+            );
+            setIsAuthModalOpen(false);
+            return;
+          }
+        } else {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: authEmail.trim(),
+            password: authPassword.trim(),
+          });
+
+          if (error) {
+            showToast('Sign-In Error', error.message, 'error');
+            return;
+          }
         }
       }
 
@@ -151,6 +143,8 @@ export default function LandingPage() {
           window.location.href = '/dashboard';
         }
       }, 150);
+    } catch (err: any) {
+      showToast('Authentication Error', err.message || 'An unexpected authentication error occurred.', 'error');
     } finally {
       setIsAuthLoading(false);
     }
@@ -158,55 +152,37 @@ export default function LandingPage() {
 
   const handleGoogleAuth = async () => {
     setIsAuthLoading(true);
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+
     try {
-      // 1. Attempt real Supabase Google OAuth if live Supabase keys are configured
       if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
-        try {
-          const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-              redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : 'http://localhost:3000/dashboard',
-            },
-          });
-          if (error) {
-            showToast('Google Provider Notice', 'Google OAuth is not enabled in your Supabase Auth Providers settings yet. Using account sign-in.', 'info');
-          } else {
-            showToast('Connecting to Google...', 'Redirecting to Google OAuth Sign In...', 'info');
-            return;
-          }
-        } catch (e: any) {
-          console.warn('Supabase Google OAuth fallback:', e);
-          showToast('Google Auth Notice', 'Using direct email sign-in profile fallback.', 'info');
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${origin}/auth/callback`,
+          },
+        });
+
+        if (error) {
+          showToast('Google OAuth Error', error.message, 'error');
+          return;
         }
+
+        showToast('Connecting to Google...', 'Redirecting to Google OAuth Sign In...', 'info');
+        return;
       }
 
-      // 2. Personal Profile Google Auth Sign-In Fallback
-      let userEmail = authEmail.trim();
-      let userName = authName.trim();
-
-      if (!userEmail) {
-        const promptEmail = prompt('Enter your Google Account Email to Sign In:', 'your.email@gmail.com');
-        if (!promptEmail) return;
-        userEmail = promptEmail.trim();
-      }
-
-      if (!userName) {
-        const defaultName = userEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        const promptName = prompt('Your Personal Full Name for Profile:', defaultName);
-        userName = (promptName || defaultName).trim();
-      }
-
+      // Local fallback if Supabase URL is placeholder
+      let userEmail = authEmail.trim() || 'developer@google.com';
+      let userName = authName.trim() || 'Google Developer';
       const userAvatar = `https://unavatar.io/${encodeURIComponent(userEmail)}`;
 
       login(userName, userEmail, authRole, userAvatar);
       setIsAuthModalOpen(false);
       showToast('Signed In Successfully! 🚀', `Welcome ${userName}! Connected as ${authRole.toUpperCase()}`, 'success');
       router.push('/dashboard');
-      setTimeout(() => {
-        if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
-          window.location.href = '/dashboard';
-        }
-      }, 150);
+    } catch (err: any) {
+      showToast('OAuth Error', err.message || 'Failed to initiate Google OAuth.', 'error');
     } finally {
       setIsAuthLoading(false);
     }

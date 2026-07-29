@@ -1,11 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createBrowserSupabaseClient } from './supabase/client';
 import { MOCK_PROJECTS } from './seed-data';
 import { Project, Evaluation, MentorRequest } from './types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-hackops.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Browser client using @supabase/ssr
+export const supabase = createBrowserSupabaseClient();
 
 // Local memory store for fallback operations during offline / missing keys
 let projectsStore: Project[] = [...MOCK_PROJECTS];
