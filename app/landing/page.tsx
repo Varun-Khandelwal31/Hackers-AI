@@ -33,6 +33,7 @@ import {
   Clock,
   Terminal,
   Key,
+  Lock,
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -44,6 +45,7 @@ export default function LandingPage() {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [authName, setAuthName] = useState('');
   const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
   const [authRole, setAuthRole] = useState<UserRole>('judge');
 
   // Active Feature Preview Tab State
@@ -53,6 +55,7 @@ export default function LandingPage() {
     setAuthMode(mode);
     setAuthName('');
     setAuthEmail('');
+    setAuthPassword('');
     setIsAuthModalOpen(true);
   };
 
@@ -66,19 +69,48 @@ export default function LandingPage() {
       showToast('Validation Error', 'Email address is required', 'error');
       return;
     }
-    if (!authName.trim()) {
-      showToast('Validation Error', 'Full name is required', 'error');
+
+    if (authMode === 'signup' && !authName.trim()) {
+      showToast('Validation Error', 'Full name is required to create an account', 'error');
       return;
     }
 
-    login(authName.trim(), authEmail.trim(), authRole);
+    if (!authPassword.trim()) {
+      showToast('Validation Error', 'Password is required', 'error');
+      return;
+    }
+
+    const displayName = authName.trim() || authEmail.split('@')[0] || 'Hackathon Member';
+
+    login(displayName, authEmail.trim(), authRole);
     setIsAuthModalOpen(false);
     showToast(
       authMode === 'signin' ? 'Signed In Successfully! 🎉' : 'Account Created! 🎉',
-      `Welcome ${authName.trim()}! Redirecting to your HackOps AI Dashboard as ${authRole.toUpperCase()}`,
+      `Welcome ${displayName}! Redirecting to your HackOps AI Dashboard as ${authRole.toUpperCase()}`,
       'success'
     );
+    
+    // Smooth dual navigation to ensure instant dashboard access
     router.push('/dashboard');
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
+        window.location.href = '/dashboard';
+      }
+    }, 150);
+  };
+
+  const handleGoogleAuth = () => {
+    const googleName = 'Google Developer';
+    const googleEmail = 'developer@google.com';
+    login(googleName, googleEmail, authRole);
+    setIsAuthModalOpen(false);
+    showToast('Google Sign In Successful! 🚀', `Welcome ${googleName}! Launching Dashboard as ${authRole.toUpperCase()}`, 'success');
+    router.push('/dashboard');
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
+        window.location.href = '/dashboard';
+      }
+    }, 150);
   };
 
   return (
@@ -200,7 +232,7 @@ export default function LandingPage() {
           </div>
           <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800/80 backdrop-blur-md hover:border-purple-500/40 transition-all">
             <span className="text-3xl font-black text-emerald-300 font-mono">100%</span>
-            <span className="text-xs text-slate-400 block font-semibold mt-1">Gemini 1.5 Flash Powered</span>
+            <span className="text-xs text-slate-400 block font-semibold mt-1">Gemini & Groq LLM Powered</span>
           </div>
         </div>
 
@@ -471,7 +503,7 @@ package.json`}
               <ul className="space-y-4 text-xs text-slate-200">
                 <li className="flex items-start space-x-3">
                   <Check className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />
-                  <span>Instant multi-rubric Gemini 1.5 Flash radar evaluation under 2s.</span>
+                  <span>Instant multi-rubric Gemini & Groq radar evaluation under 2s.</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />
@@ -528,7 +560,7 @@ package.json`}
               <span className="text-3xl font-black text-emerald-400 font-mono">03</span>
               <h3 className="text-base font-bold text-white">AI Code Review</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Google Gemini 1.5 Flash inspects GitHub repos, READMEs, and file trees to compute multi-rubric radar scores.
+                Google Gemini & Groq inspect GitHub repos, READMEs, and file trees to compute multi-rubric radar scores.
               </p>
             </div>
 
@@ -653,10 +685,10 @@ package.json`}
         </div>
       </footer>
 
-      {/* SIGN IN / SIGN UP 3D AUTH MODAL */}
+      {/* SIGN IN / CREATE ACCOUNT 3D AUTH MODAL */}
       {isAuthModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl relative">
             
             <button
               onClick={() => setIsAuthModalOpen(false)}
@@ -665,6 +697,7 @@ package.json`}
               <X className="w-5 h-5" />
             </button>
 
+            {/* Mode Switcher Tabs */}
             <div className="flex items-center justify-center space-x-2 p-1 bg-slate-950 rounded-2xl border border-slate-800">
               <button
                 onClick={() => setAuthMode('signin')}
@@ -690,34 +723,62 @@ package.json`}
 
             <div className="text-center space-y-1">
               <h3 className="text-xl font-extrabold text-white">
-                {authMode === 'signin' ? 'Welcome Back to HackOps AI' : 'Join HackOps AI Operations'}
+                {authMode === 'signin' ? 'Sign In to HackOps AI' : 'Create Free HackOps Account'}
               </h3>
               <p className="text-xs text-slate-400">
                 {authMode === 'signin'
-                  ? 'Access your judge workbench and team matching layer.'
-                  : 'Get started with instant LLM code evaluations and mentor triage.'}
+                  ? 'Enter your email & password to access your dashboard.'
+                  : 'Fill in details below to set up your hackathon profile.'}
               </p>
             </div>
 
-            <form onSubmit={handleAuthSubmit} className="space-y-4">
-              
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Full Name *</label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Alex Morgan"
-                    value={authName}
-                    onChange={(e) => setAuthName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 text-xs text-white border border-slate-800 focus:outline-none focus:border-brand-500/50"
-                  />
-                </div>
-              </div>
+            {/* Google Sign In Button */}
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={handleGoogleAuth}
+                className="w-full py-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 text-xs font-bold text-slate-200 flex items-center justify-center space-x-2.5 transition-all shadow-sm group"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.29v3.15C3.26 21.3 7.33 24 12 24z"/>
+                  <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.29C.47 8.21 0 10.05 0 12s.47 3.79 1.29 5.42l3.99-3.15z"/>
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.7 1.29 6.58l3.99 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                </svg>
+                <span>Continue with Google</span>
+              </button>
+            </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Email Address *</label>
+            <div className="flex items-center space-x-3 my-2">
+              <div className="flex-1 h-px bg-slate-800" />
+              <span className="text-[10px] text-slate-500 font-mono uppercase">Or with Email</span>
+              <div className="flex-1 h-px bg-slate-800" />
+            </div>
+
+            {/* Auth Form */}
+            <form onSubmit={handleAuthSubmit} className="space-y-3.5">
+              
+              {/* Full Name field (Only shown on Create Account) */}
+              {authMode === 'signup' && (
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">Full Name *</label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Alex Morgan"
+                      value={authName}
+                      onChange={(e) => setAuthName(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 text-xs text-white border border-slate-800 focus:outline-none focus:border-brand-500/50 font-sans"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Email Address field */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">Email Address *</label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
@@ -726,13 +787,30 @@ package.json`}
                     placeholder="e.g. alex@example.com"
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 text-xs text-white border border-slate-800 focus:outline-none focus:border-brand-500/50"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 text-xs text-white border border-slate-800 focus:outline-none focus:border-brand-500/50 font-sans"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Select Persona Role</label>
+              {/* Password field */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">Password *</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 text-xs text-white border border-slate-800 focus:outline-none focus:border-brand-500/50 font-sans"
+                  />
+                </div>
+              </div>
+
+              {/* Persona Role Selection */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">Select Persona Role</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(['judge', 'participant', 'mentor'] as UserRole[]).map((r) => {
                     const isSelected = authRole === r;
@@ -756,10 +834,10 @@ package.json`}
 
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-extrabold text-xs shadow-lg shadow-brand-600/30 flex items-center justify-center space-x-2 transition-all pt-3"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-extrabold text-xs shadow-lg shadow-brand-600/30 flex items-center justify-center space-x-2 transition-all pt-3 mt-2"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>{authMode === 'signin' ? 'Sign In & Launch Dashboard' : 'Create Account & Continue'}</span>
+                <span>{authMode === 'signin' ? 'Sign In & Launch Dashboard' : 'Create Free Account & Launch'}</span>
               </button>
             </form>
 

@@ -6,15 +6,16 @@ import { MentorRequest } from '@/lib/types';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { message, participantId = 'user-participant-1', participantName = 'Hackathon Developer', apiKey } = body;
+    const { message, participantId = 'user-participant-1', participantName = 'Hackathon Developer', apiKey, groqApiKey } = body;
 
-    const authHeaderKey = request.headers.get('x-gemini-key') || apiKey;
+    const geminiKey = request.headers.get('x-gemini-key') || apiKey;
+    const groqKey = request.headers.get('x-groq-key') || groqApiKey;
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json({ error: 'Message text is required' }, { status: 400 });
     }
 
-    const { category, aiResponse, matchedMentor, overlapScore } = await triageMentorRequest(message, participantId, authHeaderKey);
+    const { category, aiResponse, matchedMentor, overlapScore } = await triageMentorRequest(message, participantId, geminiKey, groqKey);
 
     const mentorRequestRecord: MentorRequest = {
       id: `req-${Date.now()}`,
@@ -36,6 +37,7 @@ export async function POST(request: Request) {
       request: mentorRequestRecord,
       category,
       aiResponse,
+      ai_response: aiResponse,
       matchedMentor,
       overlapScore,
     });
@@ -47,3 +49,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

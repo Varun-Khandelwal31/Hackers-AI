@@ -20,7 +20,7 @@ import {
 
 export default function MentorAssistantPage() {
   const { showToast } = useToast();
-  const { mentorMessages, addMentorMessage, requestMentorSession, activeRole, userSettings } = useApp();
+  const { mentorMessages, addMentorMessage, requestMentorSession, activeRole, userSettings, geminiApiKey, groqApiKey } = useApp();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [activeMentor, setActiveMentor] = useState<Mentor>(MOCK_MENTORS_LIST[0]);
@@ -45,19 +45,31 @@ export default function MentorAssistantPage() {
     try {
       const response = await fetch('/api/mentor-chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(geminiApiKey ? { 'x-gemini-key': geminiApiKey } : {}),
+          ...(groqApiKey ? { 'x-groq-key': groqApiKey } : {}),
+        },
         body: JSON.stringify({
           category: 'AI/ML',
           message: userMsgText,
+          apiKey: geminiApiKey,
+          groqApiKey: groqApiKey,
         }),
       });
 
       const data = await response.json();
       const aiReply =
         data.ai_response ||
-        `I analyzed your question regarding "${userMsgText.slice(0, 35)}...". I recommend checking model hyperparameters and consulting ${activeMentor.name} for specialized domain guidance.`;
+        data.aiResponse ||
+        `I analyzed your question regarding "${userMsgText.slice(0, 35)}...". I recommend checking model parameters and consulting ${activeMentor.name} for domain guidance.`;
 
       addMentorMessage(aiReply, 'ai');
+      if (data.matchedMentor) {
+        // Find matching mentor in list or set matched
+        const matched = MOCK_MENTORS_LIST.find((m) => m.name.toLowerCase().includes(data.matchedMentor.name?.toLowerCase() || '')) || data.matchedMentor;
+        if (matched) setActiveMentor(matched);
+      }
     } catch (e) {
       addMentorMessage(
         `Here is my recommendation for your query: Always ensure your dataset distribution matches your production inference environment. Let me know if you would like me to schedule a session with ${activeMentor.name}.`,
@@ -67,6 +79,7 @@ export default function MentorAssistantPage() {
       setIsSending(false);
     }
   };
+
 
   const handleConfirmBooking = () => {
     setIsBookingModalOpen(false);

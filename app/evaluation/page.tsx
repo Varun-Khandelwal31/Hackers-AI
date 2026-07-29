@@ -31,7 +31,7 @@ function AIProjectEvaluationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { showToast } = useToast();
-  const { projects, updateProjectEvaluation, addProject, activeRole, geminiApiKey } = useApp();
+  const { projects, updateProjectEvaluation, addProject, activeRole, geminiApiKey, groqApiKey } = useApp();
 
   const [mode, setMode] = useState<'workbench' | 'submissions'>('workbench');
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -68,7 +68,7 @@ function AIProjectEvaluationContent() {
     }
 
     setIsEvaluating(true);
-    showToast('AI Evaluator Running', `Evaluating "${customTitle}" via Gemini 1.5 Flash...`, 'info');
+    showToast('AI Evaluator Running', `Evaluating "${customTitle}" via LLM Radar Engine...`, 'info');
 
     try {
       const res = await fetch('/api/evaluate', {
@@ -76,6 +76,7 @@ function AIProjectEvaluationContent() {
         headers: {
           'Content-Type': 'application/json',
           ...(geminiApiKey ? { 'x-gemini-key': geminiApiKey } : {}),
+          ...(groqApiKey ? { 'x-groq-key': groqApiKey } : {}),
         },
         body: JSON.stringify({
           projectId: `custom-live-${Date.now()}`,
@@ -84,6 +85,7 @@ function AIProjectEvaluationContent() {
           fileTree: customFileTree || 'src/\n  main.py\nrequirements.txt\nREADME.md',
           description: customDescription,
           apiKey: geminiApiKey,
+          groqApiKey: groqApiKey,
         }),
       });
 
@@ -164,6 +166,7 @@ function AIProjectEvaluationContent() {
         headers: {
           'Content-Type': 'application/json',
           ...(geminiApiKey ? { 'x-gemini-key': geminiApiKey } : {}),
+          ...(groqApiKey ? { 'x-groq-key': groqApiKey } : {}),
         },
         body: JSON.stringify({
           projectId: currentProject.id,
@@ -172,6 +175,7 @@ function AIProjectEvaluationContent() {
           fileTree: currentProject.file_tree,
           description: currentProject.tag_line,
           apiKey: geminiApiKey,
+          groqApiKey: groqApiKey,
         }),
       });
 

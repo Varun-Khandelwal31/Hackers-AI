@@ -1,36 +1,52 @@
 import { createClient } from '@supabase/supabase-js';
-import { MOCK_PROJECTS, MOCK_MENTORS, ROADMAP_FEATURES } from './seed-data';
-import { Project, Evaluation, MentorRequest, User } from './types';
+import { MOCK_PROJECTS } from './seed-data';
+import { Project, Evaluation, MentorRequest } from './types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-hackops.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// In-memory store for fallback operations during demo
+// Local memory store for fallback operations during offline / missing keys
 let projectsStore: Project[] = [...MOCK_PROJECTS];
 let mentorRequestsStore: MentorRequest[] = [];
 
-export const dbService = {
+export const supabaseDbService = {
+  /**
+   * Fetch all hackathon projects from Supabase Database
+   */
   async getProjects(): Promise<Project[]> {
     try {
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-        const { data, error } = await supabase.from('projects').select('*');
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+        const { data, error } = await supabase.from('projects').select('*').order('submitted_at', { ascending: false });
         if (!error && data && data.length > 0) {
           return data as Project[];
         }
       }
     } catch (e) {
-      console.warn('Supabase fetch bypassed, using in-memory store:', e);
+      console.warn('Supabase fetch bypassed, using local store:', e);
     }
     return projectsStore;
   },
 
-  async getProjectById(id: string): Promise<Project | null> {
-    const projects = await this.getProjects();
-    return projects.find(p => p.id === id) || null;
+  /**
+   * Save a new project to Supabase
+   */
+  async saveProject(project: Project): Promise<Project> {
+    projectsStore.unshift(project);
+    try {
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+        await supabase.from('projects').insert(project);
+      }
+    } catch (e) {
+      console.warn('Supabase project save bypassed:', e);
+    }
+    return project;
   },
 
+  /**
+   * Save or update an evaluation in Supabase Database
+   */
   async saveEvaluation(projectId: string, evaluation: Evaluation): Promise<Evaluation> {
     const projIndex = projectsStore.findIndex(p => p.id === projectId);
     if (projIndex !== -1) {
@@ -39,15 +55,20 @@ export const dbService = {
         evaluation,
       };
     }
+
     try {
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
         await supabase.from('evaluations').upsert({
           id: evaluation.id,
           project_id: projectId,
           scores: evaluation.scores,
+          overall_score: evaluation.overall_score,
           feedback: evaluation.feedback,
+          recommendations: evaluation.recommendations,
           created_at: evaluation.created_at,
         });
+
+        await supabase.from('projects').update({ evaluation }).eq('id', projectId);
       }
     } catch (e) {
       console.warn('Supabase evaluation save bypassed:', e);
@@ -55,10 +76,13 @@ export const dbService = {
     return evaluation;
   },
 
+  /**
+   * Save a mentor triage request to Supabase
+   */
   async saveMentorRequest(request: MentorRequest): Promise<MentorRequest> {
     mentorRequestsStore.unshift(request);
     try {
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
         await supabase.from('mentor_requests').insert({
           id: request.id,
           participant_id: request.participant_id,
@@ -80,3 +104,5 @@ export const dbService = {
     return mentorRequestsStore;
   }
 };
+
+export const dbService = supabaseDbService;

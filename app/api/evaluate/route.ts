@@ -5,9 +5,10 @@ import { dbService } from '@/lib/supabase';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { projectId, repoUrl, readmeText, fileTree, description, apiKey } = body;
+    const { projectId, repoUrl, readmeText, fileTree, description, apiKey, groqApiKey } = body;
 
-    const authHeaderKey = request.headers.get('x-gemini-key') || apiKey;
+    const geminiKey = request.headers.get('x-gemini-key') || apiKey;
+    const groqKey = request.headers.get('x-groq-key') || groqApiKey;
 
     if (!projectId) {
       return NextResponse.json({ error: 'projectId is required' }, { status: 400 });
@@ -18,7 +19,8 @@ export async function POST(request: Request) {
       readmeText: readmeText || 'Standard React & Next.js starter repository',
       fileTree: fileTree || 'root/\n├── package.json\n└── README.md',
       description: description || 'AI hackathon submission',
-      apiKey: authHeaderKey,
+      apiKey: geminiKey,
+      groqApiKey: groqKey,
     });
 
     // Save to DB / store
@@ -33,3 +35,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

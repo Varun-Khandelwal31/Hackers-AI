@@ -19,6 +19,7 @@ export interface MatchedTeamMember {
   name: string;
   role: string;
   avatar_url?: string;
+  skills?: string[];
 }
 
 export interface MatchedTeam {
