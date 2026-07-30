@@ -15,7 +15,11 @@ export const ALL_SKILL_VECTOR_KEYS = [
 /**
  * Helper to call Groq Ultra-Fast LLM API (Llama 3.3 70B)
  */
-async function callGroqLLM(prompt: string, groqKey: string, jsonMode = true): Promise<any> {
+async function callGroqLLM(prompt: string, groqKey: string, jsonMode = true, systemPrompt?: string): Promise<any> {
+  const defaultSys = jsonMode
+    ? 'You are an expert AI hackathon evaluator. Respond ONLY with a valid raw JSON object matching the requested schema.'
+    : 'You are an experienced, warm, and highly skilled hackathon mentor chatting 1-on-1 with a participant.';
+
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -25,7 +29,7 @@ async function callGroqLLM(prompt: string, groqKey: string, jsonMode = true): Pr
     body: JSON.stringify({
       model: GROQ_MODEL,
       messages: [
-        { role: 'system', content: jsonMode ? 'You are an expert AI hackathon evaluator. Respond ONLY with a valid raw JSON object matching the requested schema.' : 'You are an expert AI technical mentor at a hackathon. Provide concise, clear, and actionable advice.' },
+        { role: 'system', content: systemPrompt || defaultSys },
         { role: 'user', content: prompt }
       ],
       ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
@@ -49,14 +53,17 @@ async function callGroqLLM(prompt: string, groqKey: string, jsonMode = true): Pr
 /**
  * Helper to call Google Gemini API (using configurable GEMINI_MODEL with fallbacks)
  */
-async function callGeminiLLM(prompt: string, geminiKey: string, jsonMode = true): Promise<any> {
+async function callGeminiLLM(prompt: string, geminiKey: string, jsonMode = true, systemPrompt?: string): Promise<any> {
   const genAI = new GoogleGenerativeAI(geminiKey);
   const candidateModels = Array.from(new Set([GEMINI_MODEL, ...GEMINI_MODEL_FALLBACKS]));
   let lastError: any = null;
 
   for (const modelName of candidateModels) {
     try {
-      const model = genAI.getGenerativeModel({ model: modelName });
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
+      });
       const result = await model.generateContent(prompt);
       const textResponse = result.response.text();
       if (jsonMode) {
@@ -265,10 +272,20 @@ export async function triageMentorRequest(
   let aiReplyText = '';
   let providerName = '';
 
+  const mentorSystemPrompt = `You are acting as an experienced, warm, and highly skilled hackathon mentor having a real 1-on-1 conversation with a participant — not a search engine or a documentation bot.
+
+RULES FOR HOW YOU RESPOND:
+- Address what they specifically said, not a generic version of their question. Reference their exact wording (e.g. "the Supabase RLS issue you mentioned", "that React state bug").
+- Keep it conversational: contractions (it's, don't, I'd), short sentences, first person ("I'd try...", "What I'd check first is...").
+- If the question is underspecified, ask ONE clarifying question before diving into a full answer, the way a real mentor would rather than guessing.
+- Don't give an exhaustive answer. Give the most likely fix first, then say "let me know if that's not it" — real mentors don't dump every possible cause at once.
+- NEVER use markdown headers (###), bullet-point lists, or textbook formatting in the response — this should read like a message from a real person, not a support ticket.
+- End with a short, natural follow-up line when appropriate (e.g. "does that line up with what you're seeing in your console?").`;
+
   // 1. Try Groq Llama 3.3 70B
   if (groqKey) {
     try {
-      aiReplyText = await callGroqLLM(`Answer this hackathon developer's technical question concisely with step-by-step guidance: "${message}"`, groqKey, false);
+      aiReplyText = await callGroqLLM(message, groqKey, false, mentorSystemPrompt);
       providerName = `Groq ${GROQ_MODEL} AI Mentor`;
     } catch (e) {
       console.warn('Groq triage failed, trying Gemini:', e);
@@ -278,7 +295,7 @@ export async function triageMentorRequest(
   // 2. Try Gemini Flash
   if (!aiReplyText && geminiKey) {
     try {
-      aiReplyText = await callGeminiLLM(`Answer this hackathon developer's technical question concisely with step-by-step guidance: "${message}"`, geminiKey, false);
+      aiReplyText = await callGeminiLLM(message, geminiKey, false, mentorSystemPrompt);
       providerName = `Google ${GEMINI_MODEL_DISPLAY_NAME} AI Mentor`;
     } catch (e) {
       console.warn('Gemini triage failed:', e);
@@ -305,13 +322,15 @@ export async function triageMentorRequest(
   }
 
   if (!aiReplyText) {
-    aiReplyText = `**${providerName || 'Instant AI Mentor Diagnosis'} (${category}):**
-
-1. Ensure your component handles state boundaries and error fallbacks cleanly.
-2. Verify API environment credentials are configured under Settings.
-3. Validate client and server hydration boundaries.
-
-Would you like to schedule a 1-on-1 session with a specialized mentor for live code review?`;
+    if (category.includes('Frontend')) {
+      aiReplyText = `Regarding that frontend issue you brought up, what I'd check first is whether your container has an overflow or fixed height setting clipping your elements. That usually causes weird layout jumps in React components. Does that line up with what you're seeing on your screen?`;
+    } else if (category.includes('AI/ML')) {
+      aiReplyText = `For that AI model call you mentioned, what I usually check first is whether your request payload matches the exact expected JSON schema and API key header format. Most model API errors happen right there in the request payload. Let me know if that's what's happening or if you're seeing a specific status code like 401 or 429!`;
+    } else if (category.includes('Backend')) {
+      aiReplyText = `On the database and auth side you mentioned, what I'd check first is whether your Supabase environment variables are properly loaded before your client attempts to query. If your app queries before session hydration, it'll return empty data or fail silently. Does that sound like what you're running into?`;
+    } else {
+      aiReplyText = `Hey there! Looking at the system architecture issue you described, I'd trace the exact request in your browser's DevTools Network tab first to see where the call breaks. What exact error code or response are you getting in your console?`;
+    }
   }
 
   let bestMentor = MOCK_MENTORS[0];
