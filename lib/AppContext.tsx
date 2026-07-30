@@ -39,6 +39,10 @@ interface AppContextType {
   groqApiKey: string;
   isAuthenticated: boolean;
   isLoaded: boolean;
+  isLiveSessionOpen: boolean;
+  activeLiveMentor: { name: string; title: string; avatarUrl: string };
+  openLiveSession: (name?: string, title?: string, avatarUrl?: string) => void;
+  closeLiveSession: () => void;
   evaluationWeights: EvaluationWeights;
   stats: {
     totalProjects: number;
@@ -134,6 +138,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     ux: 25,
   });
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isLiveSessionOpen, setIsLiveSessionOpen] = useState<boolean>(false);
+  const [activeLiveMentor, setActiveLiveMentor] = useState({
+    name: 'Alex Rivera',
+    title: 'Senior Full-Stack & AI Architect',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+  });
+
+  const openLiveSession = (name?: string, title?: string, avatarUrl?: string) => {
+    if (name) {
+      setActiveLiveMentor({
+        name,
+        title: title || 'Senior Full-Stack & AI Architect',
+        avatarUrl: avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+      });
+    }
+    setIsLiveSessionOpen(true);
+  };
+
+  const closeLiveSession = () => {
+    setIsLiveSessionOpen(false);
+  };
 
   // Load from localStorage
   useEffect(() => {
@@ -421,6 +446,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         groqApiKey,
         isAuthenticated,
         isLoaded,
+        isLiveSessionOpen,
+        activeLiveMentor,
+        openLiveSession,
+        closeLiveSession,
         evaluationWeights,
         stats,
         addProject,

@@ -20,6 +20,8 @@ import {
   X,
   CheckCircle2,
   Bot,
+  Minimize2,
+  Maximize2,
 } from 'lucide-react';
 
 interface LiveMentorSessionModalProps {
@@ -43,6 +45,7 @@ export default function LiveMentorSessionModal({
   // Connection & Lifecycle state
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'reconnecting' | 'disconnected'>('connecting');
   const [sessionSeconds, setSessionSeconds] = useState(600); // 10 minute max session cap
+  const [isMinimized, setIsMinimized] = useState(false);
   const [userKeyInput, setUserKeyInput] = useState('');
 
   // Audio / Mic State
@@ -341,6 +344,67 @@ export default function LiveMentorSessionModal({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 border border-brand-500/50 shadow-2xl rounded-2xl p-3.5 flex items-center space-x-4 animate-fade-in backdrop-blur-md">
+        {/* Animated Avatar / Live Pulse */}
+        <div className="relative shrink-0">
+          <img src={mentorAvatar} alt={mentorName} className="w-10 h-10 rounded-xl object-cover ring-2 ring-brand-500/50" />
+          <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-900 flex items-center justify-center">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+          </span>
+        </div>
+
+        {/* Info & Timer */}
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-extrabold text-white truncate max-w-[120px]">{mentorName}</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-300 font-bold">
+              {formatTimer(sessionSeconds)}
+            </span>
+          </div>
+          <div className="flex items-center space-x-2 mt-0.5 text-[10px] text-slate-400">
+            {isScreenSharing ? (
+              <span className="text-rose-400 font-semibold flex items-center space-x-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                <span>Screen Sharing 🔴</span>
+              </span>
+            ) : (
+              <span>Live Voice Session 🎙️</span>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Actions Bar */}
+        <div className="flex items-center space-x-2 border-l border-slate-800 pl-3 shrink-0">
+          <button
+            onClick={() => setIsMicMuted(!isMicMuted)}
+            className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-white transition-colors"
+            title={isMicMuted ? 'Unmute Mic' : 'Mute Mic'}
+          >
+            {isMicMuted ? <MicOff className="w-4 h-4 text-rose-400" /> : <Mic className="w-4 h-4 text-emerald-400" />}
+          </button>
+
+          <button
+            onClick={() => setIsMinimized(false)}
+            className="p-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white transition-all shadow-md shadow-brand-600/20"
+            title="Expand Session Window"
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={handleEndSession}
+            className="p-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white transition-all shadow-md shadow-rose-600/20"
+            title="End Live Session"
+          >
+            <PhoneOff className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
       <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] max-h-[780px]">
@@ -390,6 +454,15 @@ export default function LiveMentorSessionModal({
               <Clock className="w-3.5 h-3.5 text-amber-400" />
               <span>{formatTimer(sessionSeconds)}</span>
             </div>
+
+            {/* Minimize Button */}
+            <button
+              onClick={() => setIsMinimized(true)}
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+              title="Minimize to Floating PiP Dock"
+            >
+              <Minimize2 className="w-4 h-4 text-brand-400" />
+            </button>
 
             {/* Close Button */}
             <button

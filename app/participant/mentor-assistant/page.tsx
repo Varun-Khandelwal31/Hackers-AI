@@ -21,7 +21,7 @@ import {
 
 export default function MentorAssistantPage() {
   const { showToast } = useToast();
-  const { mentorMessages, addMentorMessage, requestMentorSession, activeRole, userSettings, geminiApiKey, groqApiKey } = useApp();
+  const { mentorMessages, addMentorMessage, requestMentorSession, activeRole, userSettings, geminiApiKey, groqApiKey, openLiveSession } = useApp();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [activeMentor, setActiveMentor] = useState<Mentor>(MOCK_MENTORS_LIST[0]);
@@ -284,7 +284,7 @@ export default function MentorAssistantPage() {
               {/* Action Buttons */}
               <div className="space-y-2 pt-2">
                 <button
-                  onClick={() => setIsLiveSessionModalOpen(true)}
+                  onClick={() => openLiveSession(activeMentor.name, activeMentor.title, activeMentor.avatar_url)}
                   className="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-lg shadow-brand-600/30 flex items-center justify-center space-x-2 transition-all group"
                 >
                   <Video className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
@@ -395,15 +395,6 @@ export default function MentorAssistantPage() {
             </div>
           </div>
         )}
-
-        {/* Live Session Modal */}
-        <LiveMentorSessionModal
-          isOpen={isLiveSessionModalOpen}
-          onClose={() => setIsLiveSessionModalOpen(false)}
-          mentorName={activeMentor.name}
-          mentorTitle={activeMentor.title}
-          mentorAvatar={activeMentor.avatar_url}
-        />
 
       </div>
     </AppShell>

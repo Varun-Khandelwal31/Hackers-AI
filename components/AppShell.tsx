@@ -3,6 +3,8 @@
 import React from 'react';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import LiveMentorSessionModal from './LiveMentorSessionModal';
+import { useApp } from '@/lib/AppContext';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -10,6 +12,8 @@ interface AppShellProps {
 }
 
 export default function AppShell({ children, activeRole = 'judge' }: AppShellProps) {
+  const { isLiveSessionOpen, activeLiveMentor, closeLiveSession } = useApp();
+
   return (
     <div className="min-h-screen flex bg-slate-950 text-slate-100 selection:bg-brand-500 selection:text-white">
       {/* Persistent Left Sidebar */}
@@ -22,6 +26,15 @@ export default function AppShell({ children, activeRole = 'judge' }: AppShellPro
           {children}
         </main>
       </div>
+
+      {/* Global Persistent Live Session Modal & Floating PiP Dock */}
+      <LiveMentorSessionModal
+        isOpen={isLiveSessionOpen}
+        onClose={closeLiveSession}
+        mentorName={activeLiveMentor.name}
+        mentorTitle={activeLiveMentor.title}
+        mentorAvatar={activeLiveMentor.avatarUrl}
+      />
     </div>
   );
 }
