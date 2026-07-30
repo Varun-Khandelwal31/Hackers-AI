@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import AppShell from '@/components/AppShell';
+import LiveMentorSessionModal from '@/components/LiveMentorSessionModal';
 import { MOCK_MENTORS_LIST } from '@/lib/seed-data';
 import { Mentor } from '@/lib/types';
 import { useToast } from '@/components/Toast';
@@ -26,6 +27,7 @@ export default function MentorAssistantPage() {
   const [activeMentor, setActiveMentor] = useState<Mentor>(MOCK_MENTORS_LIST[0]);
   const [inputQuery, setInputQuery] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isLiveSessionModalOpen, setIsLiveSessionModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingDate, setBookingDate] = useState('Today at 4:00 PM');
 
@@ -282,11 +284,11 @@ export default function MentorAssistantPage() {
               {/* Action Buttons */}
               <div className="space-y-2 pt-2">
                 <button
-                  onClick={() => setIsBookingModalOpen(true)}
-                  className="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-lg shadow-brand-600/30 flex items-center justify-center space-x-2 transition-all"
+                  onClick={() => setIsLiveSessionModalOpen(true)}
+                  className="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-lg shadow-brand-600/30 flex items-center justify-center space-x-2 transition-all group"
                 >
-                  <Video className="w-4 h-4" />
-                  <span>Request Live Session</span>
+                  <Video className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+                  <span>Request Live Voice & Screen Session</span>
                 </button>
 
                 <button
@@ -393,6 +395,15 @@ export default function MentorAssistantPage() {
             </div>
           </div>
         )}
+
+        {/* Live Session Modal */}
+        <LiveMentorSessionModal
+          isOpen={isLiveSessionModalOpen}
+          onClose={() => setIsLiveSessionModalOpen(false)}
+          mentorName={activeMentor.name}
+          mentorTitle={activeMentor.title}
+          mentorAvatar={activeMentor.avatar_url}
+        />
 
       </div>
     </AppShell>
