@@ -38,6 +38,7 @@ interface AppContextType {
   geminiApiKey: string;
   groqApiKey: string;
   isAuthenticated: boolean;
+  isLoaded: boolean;
   evaluationWeights: EvaluationWeights;
   stats: {
     totalProjects: number;
@@ -419,6 +420,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         geminiApiKey,
         groqApiKey,
         isAuthenticated,
+        isLoaded,
         evaluationWeights,
         stats,
         addProject,

@@ -25,13 +25,13 @@ import {
 export default function MainDashboardPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const { projects, stats: liveStats, userSettings, activeRole, addProject, isAuthenticated } = useApp();
+  const { projects, stats: liveStats, userSettings, activeRole, addProject, isAuthenticated, isLoaded } = useApp();
 
   React.useEffect(() => {
-    if (!isAuthenticated) {
+    if (isLoaded && !isAuthenticated) {
       router.push('/');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoaded, router]);
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchFilter, setSearchFilter] = useState<string>('');
@@ -124,6 +124,15 @@ export default function MainDashboardPage() {
     setNewTeamName('');
     setNewTagline('');
   };
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400 text-xs font-mono space-y-3">
+        <Sparkles className="w-8 h-8 text-brand-400 animate-spin" />
+        <span>Syncing session & operations data...</span>
+      </div>
+    );
+  }
 
   return (
     <AppShell activeRole={activeRole}>
