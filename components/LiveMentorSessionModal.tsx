@@ -385,9 +385,9 @@ export default function LiveMentorSessionModal({
       if (!replyText) {
         const lower = userPrompt.toLowerCase();
         if (isScreenSharing) {
-          replyText = `I see your screen! Looking at what you're showing me regarding "${userPrompt.slice(0, 30)}", I'd check your main component handler first to make sure your state isn't resetting on re-render. Does that line up with what you're seeing?`;
+          replyText = `Ah, looking right at your screen! On that code line you're showing me regarding "${userPrompt.slice(0, 30)}", I can see your component handler re-triggering state on every render. I'd wrap your fetch in a useEffect hook first. Does that line up with what you're seeing in your console?`;
         } else if (lower.includes('error') || lower.includes('bug') || lower.includes('failed')) {
-          replyText = `I hear you regarding that error you mentioned. What I'd check first is your terminal log to see if it's a 401 unauthenticated response or a missing env variable. Let me know if that's what's showing up!`;
+          replyText = `I hear you regarding that error you mentioned. What I'd check first is your terminal log to see if it's a 401 unauthenticated response or a missing env variable. Let me know if that's what's showing up in your console!`;
         } else if (lower.includes('supabase') || lower.includes('database') || lower.includes('auth')) {
           replyText = `On the Supabase auth issue you brought up, what I usually check first is whether your client is initializing before session hydration finishes. Does that sound like what's happening on your end?`;
         } else {
