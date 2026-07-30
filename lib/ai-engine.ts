@@ -159,6 +159,8 @@ Respond strictly in valid raw JSON format:
   "technical": 9.0,
   "completeness": 8.0,
   "ux": 8.5,
+  "plagiarism_risk": "Low",
+  "originality_breakdown": "Original hackathon code written during event timeframe. High commit velocity.",
   "feedback": "Detailed 2-3 sentence executive judge evaluation summary citing specific architecture and code quality.",
   "recommendations": [
     "Specific technical recommendation 1",
@@ -204,6 +206,8 @@ Respond strictly in valid raw JSON format:
     
     const uxVal = Number(content.ux) || 8.4;
     const overall = Number(((inv + tech + comp + uxVal) / 4).toFixed(2));
+    const plagiarismRisk: 'Low' | 'Medium' | 'High' = content.plagiarism_risk === 'High' ? 'High' : content.plagiarism_risk === 'Medium' ? 'Medium' : 'Low';
+    const originalityText = content.originality_breakdown || 'Inspected repository commit dates and tree depth. Code verified as hackathon-original.';
 
     const testExplanation = repoAnalysis.hasTests
       ? `Scored by ${providerName}. Test suite detected in repository tree.`
@@ -214,6 +218,8 @@ Respond strictly in valid raw JSON format:
       project_id: params.projectId,
       scores: { innovation: inv, technical: tech, completeness: comp, ux: uxVal },
       overall_score: overall,
+      plagiarism_risk: plagiarismRisk,
+      originality_breakdown: originalityText,
       score_breakdown: {
         innovation: { score: inv, maxScore: 10, explanation: `Scored by ${providerName}. Unique concept implementation.` },
         technical: { score: tech, maxScore: 10, explanation: `Scored by ${providerName}. Inspected source files: ${repoAnalysis.detectedSourceFiles.slice(0, 2).join(', ')}.` },

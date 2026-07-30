@@ -520,9 +520,22 @@ ${targetEval.recommendations.map((r) => '- ' + r).join('\n')}
                 <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                   <div>
                     <h3 className="text-lg font-extrabold text-white">{customTitle || 'Live Project'}</h3>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-300 border border-brand-500/30 font-mono inline-block mt-1">
-                      Evaluated via {liveEvaluation.model_used?.includes('groq') ? 'Groq Llama 3.3 70B (Failover Engine)' : 'Google Gemini 2.5 Flash Engine'}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-300 border border-brand-500/30 font-mono inline-block">
+                        Evaluated via {liveEvaluation.model_used?.includes('groq') ? 'Groq Llama 3.3 70B (Failover Engine)' : 'Google Gemini 2.5 Flash Engine'}
+                      </span>
+                      
+                      <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border flex items-center space-x-1 ${
+                        liveEvaluation.plagiarism_risk === 'High'
+                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                          : liveEvaluation.plagiarism_risk === 'Medium'
+                          ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      }`}>
+                        <ShieldCheck className="w-3 h-3" />
+                        <span>Originality: {liveEvaluation.plagiarism_risk || 'Low'} Risk ({liveEvaluation.originality_breakdown || 'Hackathon Original Code'})</span>
+                      </span>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <button

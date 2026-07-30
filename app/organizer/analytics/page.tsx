@@ -58,7 +58,7 @@ export default function OrganizerAnalyticsPage() {
   const [mentorRequests, setMentorRequests] = useState<MentorRequest[]>([]);
   const [teams, setTeams] = useState<MatchedTeam[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'analytics' | 'mentor_triage' | 'teams_matrix' | 'audit_logs'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'mentor_triage' | 'teams_matrix' | 'audit_logs' | 'sponsor_tracks'>('analytics');
 
   // Broadcast Modal State
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
@@ -342,6 +342,18 @@ export default function OrganizerAnalyticsPage() {
             <Terminal className="w-4 h-4" />
             <span>System Audit Log</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('sponsor_tracks')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+              activeTab === 'sponsor_tracks'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+            }`}
+          >
+            <Award className="w-4 h-4" />
+            <span>Sponsor Track Classifier</span>
+          </button>
         </div>
 
         {/* TAB 1: TELEMETRY & CHARTS */}
@@ -525,6 +537,60 @@ export default function OrganizerAnalyticsPage() {
                 <span>[LOG]</span>
                 <span>Loaded {projects.length} project repository submissions from database.</span>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: SPONSOR TRACK CLASSIFIER */}
+        {activeTab === 'sponsor_tracks' && (
+          <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-sm font-extrabold text-white uppercase tracking-wider flex items-center space-x-2">
+                  <Award className="w-4 h-4 text-purple-400" />
+                  <span>Automated Sponsor Track & Prize Eligibility Classifier</span>
+                </h3>
+                <p className="text-xs text-slate-400">AI auto-tagging submitted projects against sponsor bounty requirements.</p>
+              </div>
+              <span className="text-xs text-purple-300 font-mono font-bold">4 Track Categories Active</span>
+            </div>
+
+            <div className="space-y-3">
+              {projects.map((p) => {
+                const assignedTrack = p.category === 'AIML' || p.category === 'AI'
+                  ? 'Best Use of Google Gemini AI'
+                  : p.category === 'FinTech' || p.category === 'Blockchain'
+                  ? 'Best Web3 & DeFi Innovation'
+                  : p.category === 'Healthcare'
+                  ? 'Best Healthcare Technology'
+                  : 'Best Developer Tool & Infra';
+
+                return (
+                  <div key={p.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs font-bold text-white">{p.title}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono font-bold">
+                          {assignedTrack}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+                          Eligible 🟢
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400">{p.tag_line || p.readme_text?.slice(0, 80)}...</p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        showToast('Nominated for Track Prize! 🏆', `Nominated "${p.title}" for ${assignedTrack}.`, 'success');
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all whitespace-nowrap shadow-md"
+                    >
+                      Nominate for Track 🏆
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

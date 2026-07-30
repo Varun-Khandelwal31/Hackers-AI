@@ -93,6 +93,8 @@ export interface Evaluation {
   feedback: string;
   recommendations: string[];
   model_used?: string;
+  plagiarism_risk?: 'Low' | 'Medium' | 'High';
+  originality_breakdown?: string;
   created_at: string;
 }
 

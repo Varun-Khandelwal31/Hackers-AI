@@ -23,6 +23,7 @@ import {
   Minimize2,
   Maximize2,
   Send,
+  Copy,
 } from 'lucide-react';
 
 interface LiveMentorSessionModalProps {
@@ -763,7 +764,7 @@ export default function LiveMentorSessionModal({
               {transcripts.map((t, i) => (
                 <div
                   key={i}
-                  className={`p-3.5 rounded-xl text-xs leading-relaxed space-y-1 ${
+                  className={`p-3.5 rounded-xl text-xs leading-relaxed space-y-2.5 ${
                     t.sender === 'user'
                       ? 'bg-slate-950 border border-slate-800 text-slate-300 ml-4'
                       : 'bg-brand-600/15 border border-brand-500/30 text-brand-200 mr-4'
@@ -774,6 +775,25 @@ export default function LiveMentorSessionModal({
                     <span>{t.time}</span>
                   </div>
                   <p className="whitespace-pre-line">{t.text}</p>
+
+                  {/* 1-Click Code Patch Copy Button */}
+                  {t.sender === 'ai' && (
+                    <div className="pt-1 flex items-center justify-between border-t border-brand-500/20">
+                      <span className="text-[10px] text-slate-400 font-mono">Mentor Fix Suggestion</span>
+                      <button
+                        onClick={() => {
+                          const codeMatch = t.text.match(/`([^`]+)`/) || t.text.match(/(\b(const|let|var|function|import|export|useEffect|useState|if|return)\b[\s\S]*)/);
+                          const patchToCopy = codeMatch ? codeMatch[1] || codeMatch[0] : t.text;
+                          navigator.clipboard.writeText(patchToCopy);
+                          showToast('Fix Patch Copied! ⚡', 'Code snippet copied to clipboard.', 'success');
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 border border-brand-500/40 text-[10px] font-bold flex items-center space-x-1 transition-all"
+                      >
+                        <Copy className="w-3 h-3" />
+                        <span>Copy Fix Patch ⚡</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

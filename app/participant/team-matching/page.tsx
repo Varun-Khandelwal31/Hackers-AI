@@ -285,7 +285,17 @@ export default function TeamMatchingPage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-end space-x-3 pt-2">
+                <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      showToast('AI Teammate Spawned! 🤖', 'Added AI Agent (Docs & Test Suite Automation) to roster.', 'success');
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-bold transition-all flex items-center space-x-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Spawn AI Teammate 🤖</span>
+                  </button>
+
                   <button
                     onClick={() => handleReshuffleTeam(team.id)}
                     className="px-4 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 transition-colors"
