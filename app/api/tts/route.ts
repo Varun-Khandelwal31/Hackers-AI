@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 
-// ElevenLabs Voice ID Mappings for HackOps AI Mentors
+// ElevenLabs Free-Tier Verified Voice ID Mappings for HackOps AI Mentors
 const MENTOR_VOICE_MAP: Record<string, { voiceId: string; description: string }> = {
   'alex rivera': { voiceId: 'pNInz6obpgDQGcFmaJgB', description: 'Adam - Deep & confident technical mentor' },
-  'priya sharma': { voiceId: '21m00Tcm4TlvDq8ikWAM', description: 'Rachel - Warm & articulate AI engineer' },
-  'marcus chen': { voiceId: 'ErXwobaYiN019PkySvjV', description: 'Antoni - Expressive backend architect' },
-  'elena rostova': { voiceId: 'AZnzlk1XvdvUeBnXmlld', description: 'Domi - Crisp UI/UX product lead' },
+  'priya sharma': { voiceId: 'cgSgspJ2msm6clMCkdW9', description: 'Jessica - Expressive AI engineer' },
+  'marcus chen': { voiceId: 'ErXwobaYiN019PkySvjV', description: 'Antoni - Technical backend lead' },
+  'elena rostova': { voiceId: 'EXAVITQu4vr4xnSDxMaL', description: 'Bella - Professional UI/UX lead' },
 };
 
 // Default fallback voice ID (Adam)
