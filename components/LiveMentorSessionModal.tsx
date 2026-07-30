@@ -41,7 +41,7 @@ export default function LiveMentorSessionModal({
   mentorAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
 }: LiveMentorSessionModalProps) {
   const { showToast } = useToast();
-  const { geminiApiKey, groqApiKey } = useApp();
+  const { geminiApiKey, groqApiKey, elevenLabsApiKey } = useApp();
 
   // Connection & Lifecycle state
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'reconnecting' | 'disconnected'>('connecting');
@@ -398,7 +398,41 @@ export default function LiveMentorSessionModal({
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       setTranscripts((prev) => [...prev, { sender: 'ai', text: replyText, time: timeStr }]);
 
-      if (!speechMuted && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      let spokeViaElevenLabs = false;
+
+      // 1. Try ElevenLabs High-Fidelity Human TTS API
+      if (!speechMuted) {
+        try {
+          const ttsRes = await fetch('/api/tts', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(elevenLabsApiKey ? { 'x-elevenlabs-key': elevenLabsApiKey } : {}),
+            },
+            body: JSON.stringify({ text: replyText, mentorName }),
+          });
+
+          if (ttsRes.ok) {
+            const ttsData = await ttsRes.json();
+            if (ttsData.audioDataUrl) {
+              if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+              }
+              const audio = new Audio(ttsData.audioDataUrl);
+              audio.onplay = () => setAiIsSpeaking(true);
+              audio.onended = () => setAiIsSpeaking(false);
+              audio.onerror = () => setAiIsSpeaking(false);
+              await audio.play();
+              spokeViaElevenLabs = true;
+            }
+          }
+        } catch (err) {
+          console.warn('ElevenLabs TTS fallback to native SpeechSynthesis:', err);
+        }
+      }
+
+      // 2. Native Speech Synthesis Fallback
+      if (!spokeViaElevenLabs && !speechMuted && typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(replyText);
 

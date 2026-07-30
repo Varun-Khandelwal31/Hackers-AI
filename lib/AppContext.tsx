@@ -37,6 +37,7 @@ interface AppContextType {
   activeRole: UserRole;
   geminiApiKey: string;
   groqApiKey: string;
+  elevenLabsApiKey: string;
   isAuthenticated: boolean;
   isLoaded: boolean;
   isLiveSessionOpen: boolean;
@@ -60,6 +61,7 @@ interface AppContextType {
   setActiveRole: (role: UserRole) => void;
   setGeminiApiKey: (key: string) => void;
   setGroqApiKey: (key: string) => void;
+  setElevenLabsApiKey: (key: string) => void;
   setEvaluationWeights: (weights: EvaluationWeights) => void;
   login: (name: string, email: string, role?: UserRole, avatarUrl?: string) => void;
   logout: () => void;
@@ -130,6 +132,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeRole, setActiveRole] = useState<UserRole>('judge');
   const [geminiApiKey, setGeminiApiKeyState] = useState<string>('');
   const [groqApiKey, setGroqApiKeyState] = useState<string>('');
+  const [elevenLabsApiKey, setElevenLabsApiKeyState] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [evaluationWeights, setEvaluationWeightsState] = useState<EvaluationWeights>({
     innovation: 25,
@@ -191,6 +194,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         const savedGroqKey = localStorage.getItem('hackops_groq_api_key');
         if (savedGroqKey) setGroqApiKeyState(savedGroqKey);
+
+        const savedElevenLabsKey = localStorage.getItem('hackops_elevenlabs_api_key');
+        if (savedElevenLabsKey) setElevenLabsApiKeyState(savedElevenLabsKey);
 
         const savedAuth = localStorage.getItem('hackops_is_auth');
         if (savedAuth !== null) setIsAuthenticated(savedAuth === 'true');
@@ -404,6 +410,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setGroqApiKeyState(key);
   };
 
+  const setElevenLabsApiKey = (key: string) => {
+    setElevenLabsApiKeyState(key);
+    try {
+      localStorage.setItem('hackops_elevenlabs_api_key', key);
+    } catch (e) {}
+  };
+
   const setEvaluationWeights = (weights: EvaluationWeights) => {
     setEvaluationWeightsState(weights);
   };
@@ -454,6 +467,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeRole,
         geminiApiKey,
         groqApiKey,
+        elevenLabsApiKey,
         isAuthenticated,
         isLoaded,
         isLiveSessionOpen,
@@ -472,6 +486,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setActiveRole,
         setGeminiApiKey,
         setGroqApiKey,
+        setElevenLabsApiKey,
         setEvaluationWeights,
         login,
         logout,

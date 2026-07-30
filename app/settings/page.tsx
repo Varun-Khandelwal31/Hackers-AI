@@ -20,7 +20,7 @@ import {
 
 export default function SettingsPage() {
   const { showToast } = useToast();
-  const { userSettings, updateUserSettings, activeRole, setActiveRole, geminiApiKey, setGeminiApiKey, groqApiKey, setGroqApiKey } = useApp();
+  const { userSettings, updateUserSettings, activeRole, setActiveRole, geminiApiKey, setGeminiApiKey, groqApiKey, setGroqApiKey, elevenLabsApiKey, setElevenLabsApiKey } = useApp();
   const [activeTab, setActiveTab] = useState<string>('profile');
   const [settings, setSettings] = useState<UserSettings>(userSettings);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -353,6 +353,32 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => showToast('Saved!', 'Groq API Key updated', 'success')}
                       className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold"
+                    >
+                      Save Key
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div className="flex items-center space-x-2">
+                      <Key className="w-4 h-4 text-emerald-400" />
+                      <h2 className="text-sm font-bold text-white uppercase tracking-wider">ElevenLabs Human Voice TTS Key</h2>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">Human-Like Mentor Voice</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="password"
+                      placeholder="sk_..."
+                      value={elevenLabsApiKey}
+                      onChange={(e) => setElevenLabsApiKey(e.target.value)}
+                      className="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 text-xs text-white border border-slate-800 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => showToast('Saved!', 'ElevenLabs API Key updated', 'success')}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold"
                     >
                       Save Key
                     </button>
