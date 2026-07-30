@@ -177,6 +177,10 @@ export default function LiveMentorSessionModal({
   const initSpeechRecognition = () => {
     if (typeof window === 'undefined') return;
 
+    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().catch(() => {});
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
@@ -199,19 +203,12 @@ export default function LiveMentorSessionModal({
           setAiIsSpeaking(false);
         }
 
-        let interim = '';
-        let final = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            final += transcript;
-          } else {
-            interim += transcript;
-          }
+        let fullText = '';
+        for (let i = 0; i < event.results.length; i++) {
+          fullText += event.results[i][0].transcript + ' ';
         }
 
-        const currentText = (final || interim).trim();
+        const currentText = fullText.trim();
         if (currentText) {
           interimSpeechRef.current = currentText;
           setInterimTranscript(currentText);
@@ -407,6 +404,16 @@ export default function LiveMentorSessionModal({
         utterance.rate = 1.0;
         utterance.pitch = 1.0;
 
+        const voices = window.speechSynthesis.getVoices();
+        const englishVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Alex')))
+          || voices.find(v => v.lang.startsWith('en'))
+          || voices[0];
+
+        if (englishVoice) {
+          utterance.voice = englishVoice;
+        }
+
+        utterance.onstart = () => setAiIsSpeaking(true);
         utterance.onend = () => setAiIsSpeaking(false);
         utterance.onerror = () => setAiIsSpeaking(false);
 
