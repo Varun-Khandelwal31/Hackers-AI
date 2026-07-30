@@ -160,43 +160,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsLiveSessionOpen(false);
   };
 
-  // Load from localStorage
+  // Hydrate data from Supabase Database on mount
   useEffect(() => {
-    try {
-      const savedProjects = localStorage.getItem('hackops_projects');
-      if (savedProjects) setProjects(JSON.parse(savedProjects));
+    async function hydrateSupabase() {
+      try {
+        const fetchedProjects = await dbService.getProjects();
+        if (fetchedProjects && fetchedProjects.length > 0) {
+          setProjects(fetchedProjects);
+        }
 
-      const savedTeams = localStorage.getItem('hackops_teams');
-      if (savedTeams) setMatchedTeams(JSON.parse(savedTeams));
+        const fetchedRequests = await dbService.getMentorRequests();
+        if (fetchedRequests && fetchedRequests.length > 0) {
+          setMentorRequests(fetchedRequests as any);
+        }
 
-      const savedMessages = localStorage.getItem('hackops_mentor_messages');
-      if (savedMessages) setMentorMessages(JSON.parse(savedMessages));
+        const fetchedTeams = await dbService.getTeams();
+        if (fetchedTeams && fetchedTeams.length > 0) {
+          setMatchedTeams(fetchedTeams);
+        }
 
-      const savedRequests = localStorage.getItem('hackops_mentor_requests');
-      if (savedRequests) setMentorRequests(JSON.parse(savedRequests));
+        // Ephemeral UI preferences from localStorage
+        const savedSettings = localStorage.getItem('hackops_user_settings');
+        if (savedSettings) setUserSettings(JSON.parse(savedSettings));
 
-      const savedSettings = localStorage.getItem('hackops_user_settings');
-      if (savedSettings) setUserSettings(JSON.parse(savedSettings));
+        const savedRole = localStorage.getItem('hackops_active_role');
+        if (savedRole) setActiveRole(savedRole as UserRole);
 
-      const savedRole = localStorage.getItem('hackops_active_role');
-      if (savedRole) setActiveRole(savedRole as UserRole);
+        const savedApiKey = localStorage.getItem('hackops_gemini_api_key');
+        if (savedApiKey) setGeminiApiKeyState(savedApiKey);
 
-      const savedApiKey = localStorage.getItem('hackops_gemini_api_key');
-      if (savedApiKey) setGeminiApiKeyState(savedApiKey);
+        const savedGroqKey = localStorage.getItem('hackops_groq_api_key');
+        if (savedGroqKey) setGroqApiKeyState(savedGroqKey);
 
-      const savedGroqKey = localStorage.getItem('hackops_groq_api_key');
-      if (savedGroqKey) setGroqApiKeyState(savedGroqKey);
+        const savedAuth = localStorage.getItem('hackops_is_auth');
+        if (savedAuth !== null) setIsAuthenticated(savedAuth === 'true');
 
-      const savedAuth = localStorage.getItem('hackops_is_auth');
-      if (savedAuth !== null) setIsAuthenticated(savedAuth === 'true');
-
-      const savedWeights = localStorage.getItem('hackops_eval_weights');
-      if (savedWeights) setEvaluationWeightsState(JSON.parse(savedWeights));
-    } catch (e) {
-      console.error('Error loading saved state:', e);
-    } finally {
-      setIsLoaded(true);
+        const savedWeights = localStorage.getItem('hackops_eval_weights');
+        if (savedWeights) setEvaluationWeightsState(JSON.parse(savedWeights));
+      } catch (e) {
+        console.error('Error hydrating Supabase state:', e);
+      } finally {
+        setIsLoaded(true);
+      }
     }
+
+    hydrateSupabase();
   }, []);
 
   // Sync with Supabase Auth Session (Google OAuth & Email/Password)
@@ -323,6 +331,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       submitted_at: 'Just now',
     };
     setProjects((prev) => [newProject, ...prev]);
+    dbService.saveProject(newProject).catch((err) => console.warn('Supabase saveProject error:', err));
     return newProject;
   };
 
@@ -339,6 +348,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
       })
     );
+    dbService.saveEvaluation(projectId, evaluation).catch((err) => console.warn('Supabase saveEvaluation error:', err));
   };
 
   const addMentorMessage = (text: string, sender: 'user' | 'ai') => {

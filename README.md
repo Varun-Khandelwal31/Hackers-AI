@@ -8,7 +8,7 @@
 
 > **"Devfolio tells you who registered. HackOps AI tells you who should team up, who needs help right now, and who is actually worth hiring."**
 
-HackOps AI is a production-grade AI-operations layer designed for hackathon organizers, judges, mentors, and participants. It automates code reviews with multi-rubric LLM radar charts, calculates real-time skill complementarity matrix distance, and dispatches AI mentor triage.
+HackOps AI is a hackathon-ready AI operations platform designed for hackathon organizers, judges, mentors, and participants. It automates code reviews with multi-rubric LLM radar charts, calculates real-time skill complementarity matrix distance, dispatches AI mentor triage, and streams real-time leaderboards powered by Supabase.
 
 ---
 

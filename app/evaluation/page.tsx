@@ -520,7 +520,9 @@ ${targetEval.recommendations.map((r) => '- ' + r).join('\n')}
                 <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                   <div>
                     <h3 className="text-lg font-extrabold text-white">{customTitle || 'Live Project'}</h3>
-                    <span className="text-xs text-slate-400">Evaluated by {GEMINI_MODEL_DISPLAY_NAME} Engine</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-300 border border-brand-500/30 font-mono inline-block mt-1">
+                      Evaluated via {liveEvaluation.model_used?.includes('groq') ? 'Groq Llama 3.3 70B (Failover Engine)' : 'Google Gemini 2.5 Flash Engine'}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-3">
                     <button

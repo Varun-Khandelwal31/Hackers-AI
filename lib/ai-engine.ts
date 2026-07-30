@@ -228,6 +228,7 @@ Respond strictly in valid raw JSON format:
             'Optimize bundle payload size for edge deployment.',
             'Expand inline documentation and API typing.',
           ],
+      model_used: providerName.includes('Groq') ? 'llama-3.3-70b-versatile' : 'gemini-2.5-flash',
       created_at: new Date().toISOString(),
     };
   }

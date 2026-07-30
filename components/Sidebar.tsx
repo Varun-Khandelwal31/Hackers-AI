@@ -16,6 +16,9 @@ import {
   ChevronRight,
   LogOut,
   User,
+  Trophy,
+  BarChart3,
+  HelpCircle,
 } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 
@@ -38,8 +41,11 @@ export default function Sidebar({ activeRole: propRole }: SidebarProps) {
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { label: 'Leaderboard', href: '/leaderboard', icon: Trophy, badge: 'LIVE' },
     { label: 'Projects', href: '/projects', icon: FolderGit2 },
     { label: 'Evaluation', href: '/evaluation', icon: ShieldCheck, badge: 'AI' },
+    { label: 'Organizer View', href: '/organizer/analytics', icon: BarChart3 },
+    { label: 'Event Logistics FAQ', href: '/faq', icon: HelpCircle },
     { label: 'Teams', href: '/teams', icon: Users },
     { label: 'Mentor', href: '/mentor', icon: GraduationCap },
     { label: 'Roadmap', href: '/roadmap', icon: Compass },

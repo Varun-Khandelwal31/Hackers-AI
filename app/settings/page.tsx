@@ -15,6 +15,7 @@ import {
   Globe,
   Save,
   Upload,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -350,11 +351,20 @@ export default function SettingsPage() {
                     />
                     <button
                       type="button"
-                      onClick={() => showToast('Saved!', 'Groq Llama 3.3 70B API Key updated', 'success')}
+                      onClick={() => showToast('Saved!', 'Groq API Key updated', 'success')}
                       className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold"
                     >
                       Save Key
                     </button>
+                  </div>
+                </div>
+
+                {/* SECURITY DISCLAIMER BOX */}
+                <div className="p-4.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 leading-relaxed flex items-start space-x-3">
+                  <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="text-white block mb-1">Security & Client-Side Storage Disclaimer</strong>
+                    API keys configured in this settings interface are held strictly within client-side browser memory for hackathon demo purposes. Your keys are never logged, stored on external analytics servers, or transmitted to any endpoints other than direct HTTPS requests to official Google Gemini and Groq API servers.
                   </div>
                 </div>
               </div>

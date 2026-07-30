@@ -92,6 +92,7 @@ export interface Evaluation {
   };
   feedback: string;
   recommendations: string[];
+  model_used?: string;
   created_at: string;
 }
 
@@ -120,6 +121,7 @@ export interface MentorRequest {
   matched_mentor_id: string;
   matched_mentor?: User;
   status: 'open' | 'in_progress' | 'resolved';
+  model_used?: string;
   created_at: string;
 }
 
