@@ -401,17 +401,54 @@ export default function LiveMentorSessionModal({
       if (!speechMuted && typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(replyText);
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
 
         const voices = window.speechSynthesis.getVoices();
-        const englishVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Alex')))
-          || voices.find(v => v.lang.startsWith('en'))
-          || voices[0];
+        const lowerName = mentorName.toLowerCase();
+        const isFemale = lowerName.includes('priya') || lowerName.includes('elena') || lowerName.includes('sarah') || lowerName.includes('maya');
 
-        if (englishVoice) {
-          utterance.voice = englishVoice;
+        let chosenVoice = null;
+        if (isFemale) {
+          chosenVoice = voices.find(v =>
+            v.lang.startsWith('en') && (
+              v.name.includes('Samantha') ||
+              v.name.includes('Victoria') ||
+              v.name.includes('Karen') ||
+              v.name.includes('Zira') ||
+              v.name.includes('Google US English Female') ||
+              v.name.includes('Female') ||
+              v.name.includes('Fiona')
+            )
+          );
+        } else {
+          chosenVoice = voices.find(v =>
+            v.lang.startsWith('en') && (
+              v.name.includes('Alex') ||
+              v.name.includes('Daniel') ||
+              v.name.includes('Fred') ||
+              v.name.includes('Oliver') ||
+              v.name.includes('Google US English Male') ||
+              v.name.includes('Male') ||
+              v.name.includes('Aaron')
+            )
+          );
         }
+
+        if (!chosenVoice) {
+          const englishVoices = voices.filter(v => v.lang.startsWith('en'));
+          if (englishVoices.length > 0) {
+            const charSum = mentorName.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+            chosenVoice = englishVoices[charSum % englishVoices.length];
+          } else {
+            chosenVoice = voices[0];
+          }
+        }
+
+        if (chosenVoice) {
+          utterance.voice = chosenVoice;
+        }
+
+        utterance.pitch = isFemale ? 1.18 : 0.92;
+        utterance.rate = 1.0;
 
         utterance.onstart = () => setAiIsSpeaking(true);
         utterance.onend = () => setAiIsSpeaking(false);
