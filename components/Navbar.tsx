@@ -19,16 +19,27 @@ import {
 import { UserRole } from '@/lib/types';
 import { useToast } from './Toast';
 import { useApp } from '@/lib/AppContext';
+import AuthModal from './AuthModal';
+import { LogOut, LogIn, UserPlus, Settings as SettingsIcon } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { showToast } = useToast();
-  const { userSettings, activeRole, setActiveRole } = useApp();
+  const { userSettings, activeRole, setActiveRole, isAuthenticated, logout } = useApp();
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
+
+  const openAuthModal = (mode: 'signin' | 'signup') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+    setIsUserMenuOpen(false);
+  };
 
   const notifications = [
     { id: 1, title: 'Evaluation Complete', desc: 'EcoVerse AI evaluated with 8.28/10', time: '5m ago' },
@@ -148,26 +159,90 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Profile User Avatar */}
-          <Link href="/settings" className="flex items-center space-x-2 p-1 rounded-xl hover:bg-slate-900 transition-colors">
-            {userSettings.avatarUrl ? (
-              <img
-                src={userSettings.avatarUrl}
-                alt={userSettings.fullName}
-                className="w-8 h-8 rounded-lg object-cover ring-2 ring-brand-500/40"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-lg bg-brand-600/20 border border-brand-500/40 flex items-center justify-center text-brand-300 font-extrabold text-xs uppercase">
-                {userSettings.fullName?.charAt(0) || 'U'}
+          {/* User Account Menu / Auth Buttons */}
+          <div className="relative">
+            <button
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className="flex items-center space-x-2 p-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all"
+            >
+              {userSettings.avatarUrl ? (
+                <img
+                  src={userSettings.avatarUrl}
+                  alt={userSettings.fullName}
+                  className="w-7 h-7 rounded-lg object-cover ring-2 ring-brand-500/40"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-lg bg-brand-600/20 border border-brand-500/40 flex items-center justify-center text-brand-300 font-extrabold text-xs uppercase">
+                  {userSettings.fullName?.charAt(0) || 'U'}
+                </div>
+              )}
+              <span className="hidden lg:inline text-xs font-bold text-white truncate max-w-[110px]">
+                {userSettings.fullName || 'Sign In'}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+
+            {isUserMenuOpen && (
+              <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 animate-fade-in space-y-1">
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 mb-2">
+                  <div className="text-xs font-bold text-white truncate">{userSettings.fullName}</div>
+                  <div className="text-[10px] text-slate-400 font-mono truncate">{userSettings.email || 'guest@hackops.ai'}</div>
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-brand-500/20 text-brand-300 border border-brand-500/30">
+                    {activeRole}
+                  </span>
+                </div>
+
+                <Link
+                  href="/settings"
+                  onClick={() => setIsUserMenuOpen(false)}
+                  className="flex items-center space-x-2 w-full p-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all"
+                >
+                  <SettingsIcon className="w-4 h-4 text-slate-400" />
+                  <span>Account Settings</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => openAuthModal('signin')}
+                  className="flex items-center space-x-2 w-full p-2 rounded-xl text-xs font-medium text-brand-300 hover:bg-brand-500/20 transition-all"
+                >
+                  <LogIn className="w-4 h-4 text-brand-400" />
+                  <span>Sign In</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => openAuthModal('signup')}
+                  className="flex items-center space-x-2 w-full p-2 rounded-xl text-xs font-medium text-emerald-300 hover:bg-emerald-500/20 transition-all"
+                >
+                  <UserPlus className="w-4 h-4 text-emerald-400" />
+                  <span>Create Account</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    setIsUserMenuOpen(false);
+                    showToast('Logged Out', 'Successfully signed out of session', 'info');
+                  }}
+                  className="flex items-center space-x-2 w-full p-2 rounded-xl text-xs font-medium text-rose-400 hover:bg-rose-500/20 transition-all border-t border-slate-800/80 pt-2"
+                >
+                  <LogOut className="w-4 h-4 text-rose-400" />
+                  <span>Sign Out</span>
+                </button>
               </div>
             )}
-            <span className="hidden lg:inline text-xs font-bold text-white truncate max-w-[120px]">
-              {userSettings.fullName}
-            </span>
-          </Link>
+          </div>
 
         </div>
       </div>
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialMode={authModalMode}
+      />
 
       {/* Mobile Drawer Menu */}
       {isMobileMenuOpen && (
