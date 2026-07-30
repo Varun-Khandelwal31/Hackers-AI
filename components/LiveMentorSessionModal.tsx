@@ -82,6 +82,7 @@ export default function LiveMentorSessionModal({
   const recognitionRef = useRef<any>(null);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const interimSpeechRef = useRef<string>('');
+  const lastCapturedFrameRef = useRef<string>('');
   const isSessionActiveRef = useRef<boolean>(false);
   const isMicMutedRef = useRef<boolean>(false);
 
@@ -328,7 +329,7 @@ export default function LiveMentorSessionModal({
   };
 
   const captureAndStreamScreenFrame = () => {
-    if (!videoRef.current || !canvasRef.current || !isScreenSharing) return;
+    if (!videoRef.current || !canvasRef.current) return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -340,7 +341,13 @@ export default function LiveMentorSessionModal({
     canvas.height = 576;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    setScreenFrameCount((prev) => prev + 1);
+    try {
+      const base64Data = canvas.toDataURL('image/jpeg', 0.7);
+      lastCapturedFrameRef.current = base64Data;
+      setScreenFrameCount((prev) => prev + 1);
+    } catch (e) {
+      console.warn('Frame capture encoding warning:', e);
+    }
   };
 
   // 5. Generate Spoken Live AI Mentor Response & Voice Output
@@ -349,6 +356,11 @@ export default function LiveMentorSessionModal({
 
     try {
       let replyText = '';
+
+      // Force capture an instant frame right when the user asks a question if screen sharing is active
+      if (screenStreamRef.current) {
+        captureAndStreamScreenFrame();
+      }
 
       try {
         const res = await fetch('/api/mentor-chat', {
@@ -359,10 +371,9 @@ export default function LiveMentorSessionModal({
             ...(groqApiKey ? { 'x-groq-key': groqApiKey } : {}),
           },
           body: JSON.stringify({
-            message: isScreenSharing
-              ? `[Participant is sharing screen - frame captured]: ${userPrompt}`
-              : userPrompt,
+            message: userPrompt,
             participantId: 'live-voice-user',
+            ...(screenStreamRef.current && lastCapturedFrameRef.current ? { screenFrame: lastCapturedFrameRef.current } : {}),
           }),
         });
 

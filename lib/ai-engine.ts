@@ -51,12 +51,23 @@ async function callGroqLLM(prompt: string, groqKey: string, jsonMode = true, sys
 }
 
 /**
- * Helper to call Google Gemini API (using configurable GEMINI_MODEL with fallbacks)
+ * Helper to call Google Gemini API (using configurable GEMINI_MODEL with fallbacks & multimodal vision support)
  */
-async function callGeminiLLM(prompt: string, geminiKey: string, jsonMode = true, systemPrompt?: string): Promise<any> {
+async function callGeminiLLM(prompt: string, geminiKey: string, jsonMode = true, systemPrompt?: string, imageFrame?: string): Promise<any> {
   const genAI = new GoogleGenerativeAI(geminiKey);
   const candidateModels = Array.from(new Set([GEMINI_MODEL, ...GEMINI_MODEL_FALLBACKS]));
   let lastError: any = null;
+
+  const contentParts: any[] = [prompt];
+  if (imageFrame) {
+    const cleanBase64 = imageFrame.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
+    contentParts.push({
+      inlineData: {
+        mimeType: 'image/jpeg',
+        data: cleanBase64,
+      },
+    });
+  }
 
   for (const modelName of candidateModels) {
     try {
@@ -64,7 +75,7 @@ async function callGeminiLLM(prompt: string, geminiKey: string, jsonMode = true,
         model: modelName,
         ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
       });
-      const result = await model.generateContent(prompt);
+      const result = await model.generateContent(contentParts);
       const textResponse = result.response.text();
       if (jsonMode) {
         const cleanJsonStr = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -259,7 +270,8 @@ export async function triageMentorRequest(
   message: string,
   participantId: string,
   apiKey?: string,
-  groqApiKey?: string
+  groqApiKey?: string,
+  screenFrame?: string
 ): Promise<{
   category: string;
   aiResponse: string;
@@ -277,13 +289,25 @@ export async function triageMentorRequest(
 RULES FOR HOW YOU RESPOND:
 - Address what they specifically said, not a generic version of their question. Reference their exact wording (e.g. "the Supabase RLS issue you mentioned", "that React state bug").
 - Keep it conversational: contractions (it's, don't, I'd), short sentences, first person ("I'd try...", "What I'd check first is...").
-- If the question is underspecified, ask ONE clarifying question before diving into a full answer, the way a real mentor would rather than guessing.
-- Don't give an exhaustive answer. Give the most likely fix first, then say "let me know if that's not it" — real mentors don't dump every possible cause at once.
-- NEVER use markdown headers (###), bullet-point lists, or textbook formatting in the response — this should read like a message from a real person, not a support ticket.
-- End with a short, natural follow-up line when appropriate (e.g. "does that line up with what you're seeing in your console?").`;
+- If a screen image frame is attached, actively inspect the code, error message, UI, or stack trace on their screen and give real-time targeted feedback!
+- If the question is underspecified, ask ONE clarifying question before diving into a full answer.
+- Don't give an exhaustive answer. Give the most likely fix first, then say "let me know if that's not it".
+- NEVER use markdown headers (###), bullet-point lists, or textbook formatting in the response. Read like a message from a real person.
+- End with a short, natural follow-up line (e.g. "does that line up with what you're seeing in your console?").`;
 
-  // 1. Try Groq Llama 3.3 70B
-  if (groqKey) {
+  // 1. If screen frame is active, prioritize Gemini Multimodal Vision
+  if (screenFrame && geminiKey) {
+    try {
+      const visionPrompt = `The participant is sharing their screen live with you. Look at their shared screen image and answer their spoken question: "${message}"`;
+      aiReplyText = await callGeminiLLM(visionPrompt, geminiKey, false, mentorSystemPrompt, screenFrame);
+      providerName = `Google ${GEMINI_MODEL_DISPLAY_NAME} Live Vision Mentor`;
+    } catch (e) {
+      console.warn('Gemini vision triage failed, falling back:', e);
+    }
+  }
+
+  // 2. Try Groq Llama 3.3 70B if vision reply was not generated
+  if (!aiReplyText && groqKey) {
     try {
       aiReplyText = await callGroqLLM(message, groqKey, false, mentorSystemPrompt);
       providerName = `Groq ${GROQ_MODEL} AI Mentor`;
@@ -292,7 +316,7 @@ RULES FOR HOW YOU RESPOND:
     }
   }
 
-  // 2. Try Gemini Flash
+  // 3. Fallback Gemini Flash text
   if (!aiReplyText && geminiKey) {
     try {
       aiReplyText = await callGeminiLLM(message, geminiKey, false, mentorSystemPrompt);

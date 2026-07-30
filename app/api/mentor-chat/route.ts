@@ -6,7 +6,7 @@ import { MentorRequest } from '@/lib/types';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { message, participantId = 'user-participant-1', participantName = 'Hackathon Developer', apiKey, groqApiKey } = body;
+    const { message, participantId = 'user-participant-1', participantName = 'Hackathon Developer', apiKey, groqApiKey, screenFrame } = body;
 
     const geminiKey = request.headers.get('x-gemini-key') || apiKey;
     const groqKey = request.headers.get('x-groq-key') || groqApiKey;
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Message text is required' }, { status: 400 });
     }
 
-    const { category, aiResponse, matchedMentor, overlapScore } = await triageMentorRequest(message, participantId, geminiKey, groqKey);
+    const { category, aiResponse, matchedMentor, overlapScore } = await triageMentorRequest(message, participantId, geminiKey, groqKey, screenFrame);
 
     const mentorRequestRecord: MentorRequest = {
       id: `req-${Date.now()}`,
