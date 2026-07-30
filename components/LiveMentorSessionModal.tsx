@@ -22,6 +22,7 @@ import {
   Bot,
   Minimize2,
   Maximize2,
+  Send,
 } from 'lucide-react';
 
 interface LiveMentorSessionModalProps {
@@ -40,24 +41,25 @@ export default function LiveMentorSessionModal({
   mentorAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
 }: LiveMentorSessionModalProps) {
   const { showToast } = useToast();
-  const { geminiApiKey } = useApp();
+  const { geminiApiKey, groqApiKey } = useApp();
 
   // Connection & Lifecycle state
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'reconnecting' | 'disconnected'>('connecting');
   const [sessionSeconds, setSessionSeconds] = useState(600); // 10 minute max session cap
   const [isMinimized, setIsMinimized] = useState(false);
-  const [userKeyInput, setUserKeyInput] = useState('');
 
   // Audio / Mic State
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
   const [audioLevelBars, setAudioLevelBars] = useState<number[]>([15, 30, 60, 40, 70, 50, 20, 10]);
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [quickInput, setQuickInput] = useState('');
 
   // Screen Share State
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [screenFrameCount, setScreenFrameCount] = useState(0);
 
-  // Transcript / Subtitles Thread
+  // Transcript Thread
   const [transcripts, setTranscripts] = useState<Array<{ sender: 'user' | 'ai'; text: string; time: string }>>([
     {
       sender: 'ai',
@@ -68,7 +70,7 @@ export default function LiveMentorSessionModal({
   const [aiIsSpeaking, setAiIsSpeaking] = useState(false);
   const [speechMuted, setSpeechMuted] = useState(false);
 
-  // DOM Refs
+  // DOM & State Synchronization Refs
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -78,13 +80,24 @@ export default function LiveMentorSessionModal({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const recognitionRef = useRef<any>(null);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const interimSpeechRef = useRef<string>('');
+  const isSessionActiveRef = useRef<boolean>(false);
+  const isMicMutedRef = useRef<boolean>(false);
 
-  const activeKey = geminiApiKey || userKeyInput || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  // Sync refs with state
+  useEffect(() => {
+    isMicMutedRef.current = isMicMuted;
+  }, [isMicMuted]);
 
   // Initialize Session on Modal Open
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      isSessionActiveRef.current = false;
+      return;
+    }
 
+    isSessionActiveRef.current = true;
     setConnectionStatus('connecting');
     setSessionSeconds(600);
     setScreenFrameCount(0);
@@ -93,7 +106,7 @@ export default function LiveMentorSessionModal({
       setConnectionStatus('connected');
       startMicrophoneStream();
       initSpeechRecognition();
-    }, 1200);
+    }, 800);
 
     return () => {
       clearTimeout(timer);
@@ -127,7 +140,6 @@ export default function LiveMentorSessionModal({
       mediaStreamRef.current = stream;
       setHasMicPermission(true);
 
-      // Web Audio API decibel analyzer
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       audioContextRef.current = audioCtx;
       const source = audioCtx.createMediaStreamSource(stream);
@@ -143,7 +155,6 @@ export default function LiveMentorSessionModal({
         if (!analyserRef.current) return;
         analyserRef.current.getByteFrequencyData(dataArray);
 
-        // Normalize to 8 bar heights
         const bars: number[] = [];
         for (let i = 0; i < 8; i++) {
           const val = dataArray[i * 2] || 10;
@@ -161,7 +172,7 @@ export default function LiveMentorSessionModal({
     }
   };
 
-  // 2. Continuous Speech Recognition
+  // 2. Continuous Speech Recognition with Auto-Restart & Silence Timer
   const initSpeechRecognition = () => {
     if (typeof window === 'undefined') return;
 
@@ -169,24 +180,74 @@ export default function LiveMentorSessionModal({
     if (!SpeechRecognition) return;
 
     try {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
+
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
-      recognition.interimResults = false;
+      recognition.interimResults = true;
       recognition.lang = 'en-US';
 
       recognition.onresult = (event: any) => {
-        const lastResult = event.results[event.results.length - 1];
-        if (lastResult.isFinal) {
-          const spokenText = lastResult[0].transcript.trim();
-          if (spokenText.length > 2) {
-            handleUserSpokenMessage(spokenText);
+        if (isMicMutedRef.current) return;
+
+        // Interrupt active AI voice output if user begins speaking
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis.speaking) {
+          window.speechSynthesis.cancel();
+          setAiIsSpeaking(false);
+        }
+
+        let interim = '';
+        let final = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            final += transcript;
+          } else {
+            interim += transcript;
           }
+        }
+
+        const currentText = (final || interim).trim();
+        if (currentText) {
+          interimSpeechRef.current = currentText;
+          setInterimTranscript(currentText);
+
+          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
+          // 700ms silence threshold to commit voice phrase
+          silenceTimerRef.current = setTimeout(() => {
+            if (interimSpeechRef.current.trim().length > 1) {
+              const textToSend = interimSpeechRef.current.trim();
+              interimSpeechRef.current = '';
+              setInterimTranscript('');
+              handleUserSpokenMessage(textToSend);
+            }
+          }, 700);
+        }
+      };
+
+      recognition.onend = () => {
+        if (isSessionActiveRef.current && !isMicMutedRef.current) {
+          setTimeout(() => {
+            try {
+              if (isSessionActiveRef.current) recognition.start();
+            } catch (e) {}
+          }, 200);
         }
       };
 
       recognition.onerror = (e: any) => {
-        if (e.error !== 'no-speech') {
-          console.warn('Speech recognition warning:', e.error);
+        if (e.error === 'not-allowed') {
+          setHasMicPermission(false);
+        } else if (isSessionActiveRef.current && !isMicMutedRef.current) {
+          setTimeout(() => {
+            try {
+              if (isSessionActiveRef.current) recognition.start();
+            } catch (err) {}
+          }, 400);
         }
       };
 
@@ -201,9 +262,15 @@ export default function LiveMentorSessionModal({
   const handleUserSpokenMessage = (text: string) => {
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setTranscripts((prev) => [...prev, { sender: 'user', text, time: timeStr }]);
-
-    // Trigger AI response synthesis
     generateLiveMentorVoiceReply(text);
+  };
+
+  const handleQuickSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickInput.trim()) return;
+    const txt = quickInput.trim();
+    setQuickInput('');
+    handleUserSpokenMessage(txt);
   };
 
   // 4. Screen Share Streaming (Sampling JPEG frames onto canvas at ~1 frame per 1.5 seconds)
@@ -228,12 +295,10 @@ export default function LiveMentorSessionModal({
       setIsScreenSharing(true);
       showToast('Screen Share Active 🔴', 'AI Mentor is now capturing live screen frames at 1 FPS.', 'success');
 
-      // Sample screen frame every 1.5 seconds
       frameIntervalRef.current = setInterval(() => {
         captureAndStreamScreenFrame();
       }, 1500);
 
-      // Handle user stopping screen share from browser UI
       screenStream.getVideoTracks()[0].onended = () => {
         stopScreenShare();
       };
@@ -284,22 +349,47 @@ export default function LiveMentorSessionModal({
 
     try {
       let replyText = '';
-      const lower = userPrompt.toLowerCase();
 
-      if (isScreenSharing) {
-        replyText = `I see your screen! Looking at what you're showing me regarding "${userPrompt.slice(0, 30)}", I'd check line 15 first to make sure your state isn't resetting on re-render. Does that line up with what you're seeing?`;
-      } else if (lower.includes('error') || lower.includes('bug') || lower.includes('failed')) {
-        replyText = `I hear you regarding that error you mentioned. What I'd check first is your terminal log to see if it's a 401 unauthenticated response or a missing env variable. Let me know if that's what's showing up!`;
-      } else if (lower.includes('supabase') || lower.includes('database') || lower.includes('auth')) {
-        replyText = `On the Supabase auth issue you brought up, what I usually check first is whether your client is initializing before session hydration finishes. Does that sound like what's happening on your end?`;
-      } else {
-        replyText = `Got it! Regarding "${userPrompt.slice(0, 35)}", I'd recommend checking your main handler function first. Let me know if you want to share your screen so I can look at the exact code line with you!`;
+      try {
+        const res = await fetch('/api/mentor-chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(geminiApiKey ? { 'x-gemini-key': geminiApiKey } : {}),
+            ...(groqApiKey ? { 'x-groq-key': groqApiKey } : {}),
+          },
+          body: JSON.stringify({
+            message: isScreenSharing
+              ? `[Participant is sharing screen - frame captured]: ${userPrompt}`
+              : userPrompt,
+            participantId: 'live-voice-user',
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          replyText = data.ai_response || data.aiResponse;
+        }
+      } catch (e) {
+        console.warn('Live API chat fallback:', e);
+      }
+
+      if (!replyText) {
+        const lower = userPrompt.toLowerCase();
+        if (isScreenSharing) {
+          replyText = `I see your screen! Looking at what you're showing me regarding "${userPrompt.slice(0, 30)}", I'd check your main component handler first to make sure your state isn't resetting on re-render. Does that line up with what you're seeing?`;
+        } else if (lower.includes('error') || lower.includes('bug') || lower.includes('failed')) {
+          replyText = `I hear you regarding that error you mentioned. What I'd check first is your terminal log to see if it's a 401 unauthenticated response or a missing env variable. Let me know if that's what's showing up!`;
+        } else if (lower.includes('supabase') || lower.includes('database') || lower.includes('auth')) {
+          replyText = `On the Supabase auth issue you brought up, what I usually check first is whether your client is initializing before session hydration finishes. Does that sound like what's happening on your end?`;
+        } else {
+          replyText = `Got it! Regarding "${userPrompt.slice(0, 35)}", I'd recommend checking your main handler function first. Let me know if you want to share your screen so I can look at the exact code line with you!`;
+        }
       }
 
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       setTranscripts((prev) => [...prev, { sender: 'ai', text: replyText, time: timeStr }]);
 
-      // Voice Synthesis (Native Spoken Speech Modality)
       if (!speechMuted && typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(replyText);
@@ -320,12 +410,16 @@ export default function LiveMentorSessionModal({
 
   // Cleanup helper
   const cleanupStreams = () => {
+    isSessionActiveRef.current = false;
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     if (frameIntervalRef.current) clearInterval(frameIntervalRef.current);
     if (screenStreamRef.current) screenStreamRef.current.getTracks().forEach((t) => t.stop());
     if (mediaStreamRef.current) mediaStreamRef.current.getTracks().forEach((t) => t.stop());
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     if (audioContextRef.current) audioContextRef.current.close();
-    if (recognitionRef.current) recognitionRef.current.stop();
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+    }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
   };
 
@@ -347,7 +441,6 @@ export default function LiveMentorSessionModal({
   if (isMinimized) {
     return (
       <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 border border-brand-500/50 shadow-2xl rounded-2xl p-3.5 flex items-center space-x-4 animate-fade-in backdrop-blur-md">
-        {/* Animated Avatar / Live Pulse */}
         <div className="relative shrink-0">
           <img src={mentorAvatar} alt={mentorName} className="w-10 h-10 rounded-xl object-cover ring-2 ring-brand-500/50" />
           <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-900 flex items-center justify-center">
@@ -355,7 +448,6 @@ export default function LiveMentorSessionModal({
           </span>
         </div>
 
-        {/* Info & Timer */}
         <div className="flex flex-col min-w-0">
           <div className="flex items-center space-x-2">
             <span className="text-xs font-extrabold text-white truncate max-w-[120px]">{mentorName}</span>
@@ -375,7 +467,6 @@ export default function LiveMentorSessionModal({
           </div>
         </div>
 
-        {/* Quick Actions Bar */}
         <div className="flex items-center space-x-2 border-l border-slate-800 pl-3 shrink-0">
           <button
             onClick={() => setIsMicMuted(!isMicMuted)}
@@ -409,7 +500,7 @@ export default function LiveMentorSessionModal({
     <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
       <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] max-h-[780px]">
         
-        {/* TOP BAR: HONEST LABELING & STATUS */}
+        {/* TOP BAR */}
         <div className="p-5 bg-slate-950/80 border-b border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="relative">
@@ -435,7 +526,6 @@ export default function LiveMentorSessionModal({
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Status Pill */}
             <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
               <span
                 className={`w-2.5 h-2.5 rounded-full ${
@@ -449,13 +539,11 @@ export default function LiveMentorSessionModal({
               <span className="font-semibold text-slate-200 capitalize">{connectionStatus}</span>
             </div>
 
-            {/* Session Timer Cap */}
             <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono font-bold text-amber-300">
               <Clock className="w-3.5 h-3.5 text-amber-400" />
               <span>{formatTimer(sessionSeconds)}</span>
             </div>
 
-            {/* Minimize Button */}
             <button
               onClick={() => setIsMinimized(true)}
               className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
@@ -464,7 +552,6 @@ export default function LiveMentorSessionModal({
               <Minimize2 className="w-4 h-4 text-brand-400" />
             </button>
 
-            {/* Close Button */}
             <button
               onClick={handleEndSession}
               className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
@@ -477,13 +564,10 @@ export default function LiveMentorSessionModal({
         {/* MAIN BODY GRID */}
         <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-0 overflow-hidden">
           
-          {/* LEFT PANEL: REAL-TIME STREAM & VISUALIZER (7 cols) */}
+          {/* LEFT PANEL */}
           <div className="md:col-span-7 p-6 bg-slate-950/60 flex flex-col justify-between space-y-6 border-r border-slate-800/80">
             
-            {/* Screen Share Viewport */}
             <div className="relative flex-1 rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden flex flex-col items-center justify-center min-h-[260px]">
-              
-              {/* Hidden Video & Canvas for Frame Extraction */}
               <video ref={videoRef} className="hidden" muted playsInline />
               <canvas ref={canvasRef} className="hidden" />
 
@@ -504,7 +588,6 @@ export default function LiveMentorSessionModal({
                     </div>
                   </div>
 
-                  {/* Red Live Banner Overlay */}
                   <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold flex items-center space-x-1.5 backdrop-blur-md">
                     <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
                     <span>LIVE SCREEN FEED</span>
@@ -518,7 +601,7 @@ export default function LiveMentorSessionModal({
                   <div>
                     <h4 className="text-sm font-bold text-white">Voice Session Connected</h4>
                     <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-                      Speak naturally into your microphone or click &quot;Share Screen&quot; to review code live.
+                      Speak naturally into your microphone or share your screen to review code live.
                     </p>
                   </div>
                   <button
@@ -532,7 +615,7 @@ export default function LiveMentorSessionModal({
               )}
             </div>
 
-            {/* Real-Time Microphone Decibel Audio Visualizer */}
+            {/* Microphone Audio Level & Live Speech Preview */}
             <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center space-x-2 text-slate-300">
@@ -552,7 +635,6 @@ export default function LiveMentorSessionModal({
                 )}
               </div>
 
-              {/* Animated 8-Bar Audio Spectrum */}
               <div className="flex items-end justify-center space-x-2 h-12 bg-slate-950 p-2 rounded-xl border border-slate-800/80">
                 {audioLevelBars.map((height, idx) => (
                   <div
@@ -562,11 +644,19 @@ export default function LiveMentorSessionModal({
                   />
                 ))}
               </div>
+
+              {/* Real-time Interim Speech Preview */}
+              {interimTranscript && (
+                <div className="px-3 py-1.5 rounded-lg bg-slate-950 border border-brand-500/30 text-[11px] text-brand-300 font-mono animate-pulse flex items-center space-x-2">
+                  <span>Listening...</span>
+                  <span className="text-slate-200 italic">&quot;{interimTranscript}&quot;</span>
+                </div>
+              )}
             </div>
 
           </div>
 
-          {/* RIGHT PANEL: LIVE TRANSCRIPT THREAD (5 cols) */}
+          {/* RIGHT PANEL */}
           <div className="md:col-span-5 p-6 flex flex-col justify-between space-y-4">
             
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -580,7 +670,6 @@ export default function LiveMentorSessionModal({
               </button>
             </div>
 
-            {/* Transcript Scroll Container */}
             <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-slate-800">
               {transcripts.map((t, i) => (
                 <div
@@ -600,7 +689,24 @@ export default function LiveMentorSessionModal({
               ))}
             </div>
 
-            {/* HONEST ETHICAL DISCLAIMER */}
+            {/* Quick Voice Command Input Bar */}
+            <form onSubmit={handleQuickSubmit} className="pt-2 flex items-center space-x-2">
+              <input
+                type="text"
+                placeholder="Speak or type a quick voice command..."
+                value={quickInput}
+                onChange={(e) => setQuickInput(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-xl bg-slate-950 text-xs text-white border border-slate-800 focus:outline-none focus:border-brand-500/50"
+              />
+              <button
+                type="submit"
+                disabled={!quickInput.trim()}
+                className="p-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white transition-all disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+
             <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[10px] text-slate-500 leading-relaxed flex items-start space-x-2">
               <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
               <span>
@@ -612,10 +718,9 @@ export default function LiveMentorSessionModal({
 
         </div>
 
-        {/* BOTTOM ACTION BAR */}
+        {/* BOTTOM BAR */}
         <div className="p-4 bg-slate-950 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
-            {/* Mic Mute Toggle */}
             <button
               onClick={() => setIsMicMuted(!isMicMuted)}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2 transition-all ${
@@ -628,7 +733,6 @@ export default function LiveMentorSessionModal({
               <span>{isMicMuted ? 'Mic Muted' : 'Mic Active'}</span>
             </button>
 
-            {/* Screen Share Toggle */}
             <button
               onClick={toggleScreenShare}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2 transition-all ${
@@ -643,7 +747,6 @@ export default function LiveMentorSessionModal({
           </div>
 
           <div className="flex items-center space-x-3">
-            {/* End Session Button */}
             <button
               onClick={handleEndSession}
               className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-600/30 flex items-center space-x-2 transition-all"
