@@ -11,6 +11,26 @@ const MENTOR_VOICE_MAP: Record<string, { voiceId: string; description: string }>
 // Default fallback voice ID (Adam)
 const DEFAULT_VOICE_ID = 'pNInz6obpgDQGcFmaJgB';
 
+function getVoiceIdForMentor(mentorName: string): string {
+  const lower = mentorName.toLowerCase();
+  if (lower.includes('priya') || lower.includes('jessica')) {
+    return 'cgSgspJ2msm6clMCkdW9'; // Jessica (Female)
+  }
+  if (lower.includes('elena') || lower.includes('bella') || lower.includes('sarah') || lower.includes('maya')) {
+    return 'EXAVITQu4vr4xnSDxMaL'; // Bella (Female)
+  }
+  if (lower.includes('marcus') || lower.includes('antoni')) {
+    return 'ErXwobaYiN019PkySvjV'; // Antoni (Male)
+  }
+  if (lower.includes('alex') || lower.includes('adam')) {
+    return 'pNInz6obpgDQGcFmaJgB'; // Adam (Male)
+  }
+  if (lower.includes('female') || lower.includes('woman') || lower.includes('she')) {
+    return 'cgSgspJ2msm6clMCkdW9'; // Default Female
+  }
+  return DEFAULT_VOICE_ID;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -29,8 +49,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const mentorKey = mentorName.toLowerCase().trim();
-    const voiceId = MENTOR_VOICE_MAP[mentorKey]?.voiceId || DEFAULT_VOICE_ID;
+    const voiceId = getVoiceIdForMentor(mentorName);
 
     // Call ElevenLabs Text-to-Speech API
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {

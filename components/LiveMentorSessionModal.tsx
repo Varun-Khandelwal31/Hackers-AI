@@ -101,6 +101,10 @@ export default function LiveMentorSessionModal({
       return;
     }
 
+    // Reset voice cache whenever session opens or mentor changes
+    lockedVoiceRef.current = null;
+    lockedVoiceMentorRef.current = mentorName;
+
     isSessionActiveRef.current = true;
     setConnectionStatus('connecting');
     setSessionSeconds(600);
@@ -116,7 +120,7 @@ export default function LiveMentorSessionModal({
       clearTimeout(timer);
       cleanupStreams();
     };
-  }, [isOpen]);
+  }, [isOpen, mentorName]);
 
   // Countdown Timer Cap (10 mins max)
   useEffect(() => {
