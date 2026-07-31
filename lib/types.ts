@@ -93,6 +93,10 @@ export interface Evaluation {
   };
   feedback: string;
   recommendations: string[];
+  verdict_badge?: string;
+  strengths_breakdown?: string[];
+  vulnerabilities_detected?: string[];
+  judge_defense_qa?: Array<{ question: string; suggested_answer: string }>;
   model_used?: string;
   plagiarism_risk?: 'Low' | 'Medium' | 'High';
   originality_breakdown?: string;

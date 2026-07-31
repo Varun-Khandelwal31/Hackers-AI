@@ -560,37 +560,121 @@ ${targetEval.recommendations.map((r) => '- ' + r).join('\n')}
                   </div>
                 </div>
 
+                {/* Verdict Banner */}
+                {liveEvaluation.verdict_badge && (
+                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-brand-600/20 to-purple-600/20 border border-amber-500/40 flex items-center justify-between">
+                    <span className="text-xs font-mono text-amber-300 font-bold uppercase tracking-wider">Official Executive Verdict</span>
+                    <span className="text-xs font-black text-white px-3 py-1 rounded-full bg-slate-950 border border-amber-400/50 shadow-md">
+                      {liveEvaluation.verdict_badge}
+                    </span>
+                  </div>
+                )}
+
                 {/* Radar Chart */}
                 <RadarChartWrapper
                   scores={liveEvaluation.scores}
                   projectName={customTitle || 'Live Evaluation'}
                 />
 
-                {/* Scores Breakdown Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Innovation</span>
-                    <div className="text-lg font-black text-brand-400 font-mono">{liveEvaluation.scores.innovation}/10</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Technical</span>
-                    <div className="text-lg font-black text-cyan-400 font-mono">{liveEvaluation.scores.technical}/10</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Completeness</span>
-                    <div className="text-lg font-black text-emerald-400 font-mono">{liveEvaluation.scores.completeness}/10</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">UX / Pitch</span>
-                    <div className="text-lg font-black text-purple-400 font-mono">{liveEvaluation.scores.ux}/10</div>
+                {/* Detailed Rubric Criteria Explanations */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">4-Tier Category Judge Rationale</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className="text-brand-300">1. Innovation & Originality</span>
+                        <span className="font-mono text-white">{liveEvaluation.scores.innovation}/10</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        {liveEvaluation.score_breakdown?.innovation?.explanation || 'Evaluated for creative problem approach and novel technical implementation.'}
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className="text-cyan-300">2. Technical Depth & Code</span>
+                        <span className="font-mono text-white">{liveEvaluation.scores.technical}/10</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        {liveEvaluation.score_breakdown?.technical?.explanation || 'Evaluated for architecture modularity, type safety, and code syntax quality.'}
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className="text-emerald-300">3. Completeness & Flow</span>
+                        <span className="font-mono text-white">{liveEvaluation.scores.completeness}/10</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        {liveEvaluation.score_breakdown?.completeness?.explanation || 'Evaluated for working user workflow, test suite presence, and CI readiness.'}
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className="text-purple-300">4. UI/UX & Design Polish</span>
+                        <span className="font-mono text-white">{liveEvaluation.scores.ux}/10</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        {liveEvaluation.score_breakdown?.ux?.explanation || 'Evaluated for design system harmony, responsiveness, and interaction feedback.'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Feedback */}
-                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
-                  <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Executive Judge Feedback</h4>
+                {/* Executive Judge Summary */}
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Executive Judge Verdict</h4>
                   <p className="text-xs text-slate-300 leading-relaxed">{liveEvaluation.feedback}</p>
                 </div>
+
+                {/* Strengths & Architectural Highlights */}
+                {liveEvaluation.strengths_breakdown && liveEvaluation.strengths_breakdown.length > 0 && (
+                  <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-2">
+                    <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <span>Key Architectural Strengths Highlighted</span>
+                    </h4>
+                    <ul className="space-y-1 pl-4 list-disc text-xs text-slate-300">
+                      {liveEvaluation.strengths_breakdown.map((s, idx) => (
+                        <li key={idx}>{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Vulnerabilities & Risks Detected */}
+                {liveEvaluation.vulnerabilities_detected && liveEvaluation.vulnerabilities_detected.length > 0 && (
+                  <div className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/30 space-y-2">
+                    <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center space-x-1.5">
+                      <AlertTriangle className="w-4 h-4 text-rose-400" />
+                      <span>Code Vulnerabilities & Risks Flagged</span>
+                    </h4>
+                    <ul className="space-y-1 pl-4 list-disc text-xs text-slate-300">
+                      {liveEvaluation.vulnerabilities_detected.map((v, idx) => (
+                        <li key={idx}>{v}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Judge Pitch Q&A Defense Script */}
+                {liveEvaluation.judge_defense_qa && liveEvaluation.judge_defense_qa.length > 0 && (
+                  <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/30 space-y-3">
+                    <h4 className="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center space-x-1.5">
+                      <Sparkles className="w-4 h-4 text-purple-400" />
+                      <span>Judge Pitch Q&A Defense Script (Demo Preparation)</span>
+                    </h4>
+                    <div className="space-y-2.5">
+                      {liveEvaluation.judge_defense_qa.map((qa, idx) => (
+                        <div key={idx} className="p-3 rounded-lg bg-slate-950 border border-slate-800 space-y-1 text-xs">
+                          <span className="font-bold text-amber-300 block">Q: {qa.question}</span>
+                          <p className="text-slate-300 text-[11px] leading-relaxed"><strong className="text-emerald-400">Suggested Defense:</strong> {qa.suggested_answer}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
               </div>
             )}
