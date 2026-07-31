@@ -20,6 +20,7 @@ import {
   BarChart3,
   HelpCircle,
   UserCheck,
+  Award,
 } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 
@@ -46,6 +47,7 @@ export default function Sidebar({ activeRole: propRole }: SidebarProps) {
     { label: 'Projects', href: '/projects', icon: FolderGit2 },
     { label: 'Evaluation', href: '/evaluation', icon: ShieldCheck, badge: 'AI' },
     { label: 'Judge Portal', href: '/judge', icon: UserCheck, badge: 'JUDGE' },
+    { label: 'Hiring Intelligence', href: '/recruiter', icon: Award, badge: 'HIRE' },
     { label: 'Organizer View', href: '/organizer/analytics', icon: BarChart3 },
     { label: 'Event Logistics FAQ', href: '/faq', icon: HelpCircle },
     { label: 'Teams', href: '/teams', icon: Users },
