@@ -199,6 +199,7 @@ AI-driven environmental monitoring solution using satellite data and predictive 
     category: 'AI for Good',
     team_size: 4,
     badge: 'Finalist',
+    demo_url: 'https://ecoverse-ai-demo.vercel.app',
     cover_image: 'https://images.unsplash.com/photo-1511497584788-876761465586?w=600&auto=format&fit=crop&q=80',
     evaluation: {
       id: 'eval-ecoverse',

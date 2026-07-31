@@ -56,6 +56,7 @@ export interface Project {
   readme_text: string;
   file_tree: string;
   demo_video_url?: string;
+  demo_url?: string; // Live deployed project web URL (e.g. Vercel, Render)
   submitted_at: string;
   tags: string[];
   category: string;
