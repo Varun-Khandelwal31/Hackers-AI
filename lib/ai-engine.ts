@@ -58,7 +58,7 @@ async function callGeminiLLM(prompt: string, geminiKey: string, jsonMode = true,
   const candidateModels = Array.from(new Set([GEMINI_MODEL, ...GEMINI_MODEL_FALLBACKS]));
   let lastError: any = null;
 
-  const contentParts: any[] = [prompt];
+  const contentParts: any[] = [];
   if (imageFrame) {
     const cleanBase64 = imageFrame.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
     contentParts.push({
@@ -68,6 +68,7 @@ async function callGeminiLLM(prompt: string, geminiKey: string, jsonMode = true,
       },
     });
   }
+  contentParts.push(prompt);
 
   for (const modelName of candidateModels) {
     try {
