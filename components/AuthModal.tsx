@@ -5,6 +5,7 @@ import { useApp } from '@/lib/AppContext';
 import { useToast } from '@/components/Toast';
 import { UserRole } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 import {
   Sparkles,
   X,
@@ -25,6 +26,7 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModalProps) {
+  const router = useRouter();
   const { showToast } = useToast();
   const { login } = useApp();
 
@@ -102,9 +104,12 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }: A
       login(displayName, email.trim(), mode === 'signup' ? role : 'participant', avatarUrl);
       if (mode === 'signin') {
         showToast('Signed In Successfully!', `Welcome back, ${displayName}`, 'success');
+      } else {
+        showToast('Account Created! 🎉', `Welcome to HackOps AI, ${displayName}!`, 'success');
       }
       setIsLoading(false);
       onClose();
+      router.push('/dashboard');
     } catch (e: any) {
       setIsLoading(false);
       showToast('Authentication Error', e.message || 'Failed to authenticate', 'error');
@@ -125,6 +130,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }: A
         login('Demo Member', 'demo@hackops.ai', 'participant');
         showToast('Signed In with Google Demo', 'Authenticated via OAuth provider', 'success');
         onClose();
+        router.push('/dashboard');
       }
     } catch (e: any) {
       showToast('Google Sign In Error', e.message, 'error');
