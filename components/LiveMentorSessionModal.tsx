@@ -86,6 +86,8 @@ export default function LiveMentorSessionModal({
   const lastCapturedFrameRef = useRef<string>('');
   const isSessionActiveRef = useRef<boolean>(false);
   const isMicMutedRef = useRef<boolean>(false);
+  const lockedVoiceRef = useRef<any>(null);
+  const lockedVoiceMentorRef = useRef<string>('');
 
   // Sync refs with state
   useEffect(() => {
@@ -272,6 +274,65 @@ export default function LiveMentorSessionModal({
     handleUserSpokenMessage(txt);
   };
 
+  // Helper to lock a specific SpeechSynthesis voice per mentor persona for the session duration
+  const getOrLockVoice = (name: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
+
+    if (lockedVoiceRef.current && lockedVoiceMentorRef.current === name) {
+      return lockedVoiceRef.current;
+    }
+
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return null;
+
+    const lowerName = name.toLowerCase();
+    const isFemale = lowerName.includes('priya') || lowerName.includes('elena') || lowerName.includes('sarah') || lowerName.includes('maya');
+
+    let matchedVoice = null;
+    if (isFemale) {
+      matchedVoice = voices.find(v =>
+        v.lang.startsWith('en') && (
+          v.name.includes('Samantha') ||
+          v.name.includes('Victoria') ||
+          v.name.includes('Karen') ||
+          v.name.includes('Zira') ||
+          v.name.includes('Google US English Female') ||
+          v.name.includes('Female') ||
+          v.name.includes('Fiona')
+        )
+      );
+    } else {
+      matchedVoice = voices.find(v =>
+        v.lang.startsWith('en') && (
+          v.name.includes('Alex') ||
+          v.name.includes('Daniel') ||
+          v.name.includes('Fred') ||
+          v.name.includes('Oliver') ||
+          v.name.includes('Google US English Male') ||
+          v.name.includes('Male') ||
+          v.name.includes('Aaron')
+        )
+      );
+    }
+
+    if (!matchedVoice) {
+      const englishVoices = voices.filter(v => v.lang.startsWith('en'));
+      if (englishVoices.length > 0) {
+        const sum = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+        matchedVoice = englishVoices[sum % englishVoices.length];
+      } else {
+        matchedVoice = voices[0];
+      }
+    }
+
+    if (matchedVoice) {
+      lockedVoiceRef.current = matchedVoice;
+      lockedVoiceMentorRef.current = name;
+    }
+
+    return matchedVoice;
+  };
+
   // 4. Screen Share Streaming (Sampling JPEG frames onto canvas at ~1 frame per 1.5 seconds)
   const toggleScreenShare = async () => {
     if (isScreenSharing) {
@@ -288,7 +349,13 @@ export default function LiveMentorSessionModal({
       screenStreamRef.current = screenStream;
       if (videoRef.current) {
         videoRef.current.srcObject = screenStream;
-        videoRef.current.play();
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(() => {});
+            setTimeout(() => captureAndStreamScreenFrame(), 300);
+          }
+        };
+        videoRef.current.play().catch(() => {});
       }
 
       setIsScreenSharing(true);
@@ -327,22 +394,30 @@ export default function LiveMentorSessionModal({
   };
 
   const captureAndStreamScreenFrame = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-
     const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    if (!video) return;
 
-    if (!ctx || video.videoWidth === 0) return;
+    const width = video.videoWidth || 1280;
+    const height = video.videoHeight || 720;
+
+    let canvas = canvasRef.current;
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvasRef.current = canvas;
+    }
 
     canvas.width = 1024;
-    canvas.height = 576;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.height = Math.round((1024 * (height || 720)) / (width || 1280));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
     try {
-      const base64Data = canvas.toDataURL('image/jpeg', 0.7);
-      lastCapturedFrameRef.current = base64Data;
-      setScreenFrameCount((prev) => prev + 1);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const base64Data = canvas.toDataURL('image/jpeg', 0.75);
+      if (base64Data && base64Data.length > 100) {
+        lastCapturedFrameRef.current = base64Data;
+        setScreenFrameCount((prev) => prev + 1);
+      }
     } catch (e) {
       console.warn('Frame capture encoding warning:', e);
     }
@@ -437,52 +512,14 @@ export default function LiveMentorSessionModal({
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(replyText);
 
-        const voices = window.speechSynthesis.getVoices();
-        const lowerName = mentorName.toLowerCase();
-        const isFemale = lowerName.includes('priya') || lowerName.includes('elena') || lowerName.includes('sarah') || lowerName.includes('maya');
-
-        let chosenVoice = null;
-        if (isFemale) {
-          chosenVoice = voices.find(v =>
-            v.lang.startsWith('en') && (
-              v.name.includes('Samantha') ||
-              v.name.includes('Victoria') ||
-              v.name.includes('Karen') ||
-              v.name.includes('Zira') ||
-              v.name.includes('Google US English Female') ||
-              v.name.includes('Female') ||
-              v.name.includes('Fiona')
-            )
-          );
-        } else {
-          chosenVoice = voices.find(v =>
-            v.lang.startsWith('en') && (
-              v.name.includes('Alex') ||
-              v.name.includes('Daniel') ||
-              v.name.includes('Fred') ||
-              v.name.includes('Oliver') ||
-              v.name.includes('Google US English Male') ||
-              v.name.includes('Male') ||
-              v.name.includes('Aaron')
-            )
-          );
-        }
-
-        if (!chosenVoice) {
-          const englishVoices = voices.filter(v => v.lang.startsWith('en'));
-          if (englishVoices.length > 0) {
-            const charSum = mentorName.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-            chosenVoice = englishVoices[charSum % englishVoices.length];
-          } else {
-            chosenVoice = voices[0];
-          }
-        }
-
+        const chosenVoice = getOrLockVoice(mentorName);
         if (chosenVoice) {
           utterance.voice = chosenVoice;
         }
 
-        utterance.pitch = isFemale ? 1.18 : 0.92;
+        const lowerName = mentorName.toLowerCase();
+        const isFemale = lowerName.includes('priya') || lowerName.includes('elena') || lowerName.includes('sarah') || lowerName.includes('maya');
+        utterance.pitch = isFemale ? 1.15 : 0.92;
         utterance.rate = 1.0;
 
         utterance.onstart = () => setAiIsSpeaking(true);
@@ -658,7 +695,7 @@ export default function LiveMentorSessionModal({
           <div className="md:col-span-7 p-6 bg-slate-950/60 flex flex-col justify-between space-y-6 border-r border-slate-800/80">
             
             <div className="relative flex-1 rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden flex flex-col items-center justify-center min-h-[260px]">
-              <video ref={videoRef} className="hidden" muted playsInline />
+              <video ref={videoRef} autoPlay muted playsInline className="absolute opacity-0 pointer-events-none w-1 h-1" />
               <canvas ref={canvasRef} className="hidden" />
 
               {isScreenSharing ? (
