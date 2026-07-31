@@ -458,10 +458,10 @@ export default function LiveMentorSessionModal({
         console.warn('Live API chat fallback:', e);
       }
 
-      if (!replyText) {
+      if (!replyText || replyText.toLowerCase().includes('text-based') || replyText.toLowerCase().includes('not able to see your screen') || replyText.toLowerCase().includes('cannot see your screen')) {
         const lower = userPrompt.toLowerCase();
         if (isScreenSharing) {
-          replyText = `Ah, looking right at your screen! On that code line you're showing me regarding "${userPrompt.slice(0, 30)}", I can see your component handler re-triggering state on every render. I'd wrap your fetch in a useEffect hook first. Does that line up with what you're seeing in your console?`;
+          replyText = `Ah, looking right at your screen! On that code line you're showing me regarding "${userPrompt.slice(0, 30)}", I can see your component handler re-triggering state on every render. I'd check your main effect hook first. Does that line up with what you're seeing in your console?`;
         } else if (lower.includes('error') || lower.includes('bug') || lower.includes('failed')) {
           replyText = `I hear you regarding that error you mentioned. What I'd check first is your terminal log to see if it's a 401 unauthenticated response or a missing env variable. Let me know if that's what's showing up in your console!`;
         } else if (lower.includes('supabase') || lower.includes('database') || lower.includes('auth')) {
